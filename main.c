@@ -201,8 +201,6 @@ Form parse_form(const StringView src) {
 int main(void) {
     StringView sample_source = strv_fromtstr("hello-world");
 
-    printf("Hello, World!\n");
-
     Form f = parse_form(sample_source);
     printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
     // printf("%i %li", f.type, f.as_long);
