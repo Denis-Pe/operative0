@@ -159,7 +159,7 @@ Form parse_form(const StringView src) {
                 } else if (isspace(c)) {
                     continue;
                 } else {
-                    printf("Unsupported character: '%c'\nExiting now...\n", c);
+                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
                 }
                 break;
@@ -169,7 +169,7 @@ Form parse_form(const StringView src) {
                 } else if (isspace(c)) {
                     parsm.type = PARSING_NONE;
                 } else {
-                    printf("Unsupported character: '%c'\nExiting now...\n", c);
+                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
                 }
                 break;
@@ -184,7 +184,7 @@ Form parse_form(const StringView src) {
                         parsm.isneg = false;
                     }
                 } else {
-                    printf("Unsupported character: '%c'\nExiting now...\n", c);
+                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
                 }
                 break;
