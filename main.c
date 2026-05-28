@@ -134,8 +134,9 @@ void free_root_forms(const RootForms forms) {
     free(forms.ptr);
 }
 
-Form parse_form(const StringView src) {
+RootForms parse_forms(const StringView src) {
     Parsm parsm = {PARSING_NONE, false};
+    RootForms root_forms = alloc_root_forms();
     Form form;
 
     for (size_t i = 0; i < src.len; ++i) {
@@ -168,6 +169,7 @@ Form parse_form(const StringView src) {
                     str_pushc(&form.as_word, c);
                 } else if (isspace(c)) {
                     parsm.type = PARSING_NONE;
+                    root_forms_push(&root_forms, form);
                 } else {
                     fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
@@ -183,6 +185,7 @@ Form parse_form(const StringView src) {
                         form.as_long *= -1;
                         parsm.isneg = false;
                     }
+                    root_forms_push(&root_forms, form);
                 } else {
                     fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
@@ -194,16 +197,22 @@ Form parse_form(const StringView src) {
     if (parsm.type == PARSING_LONG && parsm.isneg) {
         form.as_long *= -1;
     }
+    if (parsm.type != PARSING_NONE) {
+        root_forms_push(&root_forms, form);
+    }
 
-    return form;
+    return root_forms;
 }
 
 int main(void) {
-    StringView sample_source = strv_fromtstr("hello-world");
+    StringView sample_source = strv_fromtstr("1 2 3 4 5 6 7 8 9 10");
 
-    Form f = parse_form(sample_source);
-    printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
-    // printf("%i %li", f.type, f.as_long);
+    RootForms forms = parse_forms(sample_source);
+    // printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
+    for (size_t i = 0; i < forms.len; i++) {
+        const Form f = forms.ptr[i];
+        printf("%i %li\n", f.type, f.as_long);
+    }
 
     return 0;
 }
