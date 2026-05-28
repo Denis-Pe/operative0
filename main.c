@@ -13,7 +13,6 @@ typedef struct {
     size_t cap;
 } String;
 
-/// initialized to \0
 /// buffer is set to NULL if capacity is 0
 String alloc_str_cap(const size_t capacity) {
     char *buf = NULL;
