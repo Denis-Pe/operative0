@@ -15,7 +15,7 @@ typedef struct {
 
 /// initialized to \0
 /// buffer is set to NULL if capacity is 0
-String str_make_capacity(const size_t capacity) {
+String alloc_str_cap(const size_t capacity) {
     char *buf = NULL;
     if (capacity > 0) {
         buf = malloc(capacity);
@@ -24,8 +24,8 @@ String str_make_capacity(const size_t capacity) {
     return s;
 }
 
-String str_make() {
-    return str_make_capacity(DEFAULT_STRING_CAPACITY);
+String alloc_str() {
+    return alloc_str_cap(DEFAULT_STRING_CAPACITY);
 }
 
 void str_pushc(String *s, const char c) {
@@ -42,13 +42,13 @@ void str_pushtstr(String *string, const char *tstr) {
     }
 }
 
-String str_fromtstr(const char *tstr) {
-    String s = str_make();
+String alloc_str_fromtstr(const char *tstr) {
+    String s = alloc_str();
     str_pushtstr(&s, tstr);
     return s;
 }
 
-String str_clone(const String from) {
+String alloc_str_clone(const String from) {
     char *buf = malloc(from.cap);
     memcpy(buf, from.ptr, from.len);
     const String s = {buf, from.len, from.cap};
@@ -109,7 +109,7 @@ Form parse_form(const StringView src) {
                 if (isalpha(c)) {
                     parsm.type = PARSING_WORD;
                     form.type = FORM_WORD;
-                    form.as_word = str_make();
+                    form.as_word = alloc_str();
                     str_pushc(&form.as_word, c);
                 } else if (c == '-') {
                     parsm.type = PARSING_LONG;
