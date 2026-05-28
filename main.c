@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,21 +93,31 @@ typedef enum {
     PARSING_LONG,
 } ParsingState;
 
+typedef struct {
+    ParsingState type;
+    bool isneg;
+} Parsm; // parsing state machine
+
 Form parse_form(const StringView src) {
-    ParsingState state = PARSING_NONE;
+    Parsm parsm = {PARSING_NONE, false};
     Form form;
 
     for (size_t i = 0; i < src.len; ++i) {
         const char c = src.ptr[i];
-        switch (state) {
+        switch (parsm.type) {
             case PARSING_NONE:
                 if (isalpha(c)) {
-                    state = PARSING_WORD;
+                    parsm.type = PARSING_WORD;
                     form.type = FORM_WORD;
                     form.as_word = str_make();
                     str_pushc(&form.as_word, c);
+                } else if (c == '-') {
+                    parsm.type = PARSING_LONG;
+                    parsm.isneg = true;
+                    form.type = FORM_LONG;
+                    form.as_long = 0;
                 } else if (isdigit(c)) {
-                    state = PARSING_LONG;
+                    parsm.type = PARSING_LONG;
                     form.type = FORM_LONG;
                     form.as_long = c - 48;
                 } else if (isspace(c)) {
@@ -117,10 +128,10 @@ Form parse_form(const StringView src) {
                 }
                 break;
             case PARSING_WORD:
-                if (isalnum(c)) {
+                if (isalnum(c) || c == '-') {
                     str_pushc(&form.as_word, c);
                 } else if (isspace(c)) {
-                    state = PARSING_NONE;
+                    parsm.type = PARSING_NONE;
                 } else {
                     printf("Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
@@ -131,7 +142,11 @@ Form parse_form(const StringView src) {
                     form.as_long *= 10;
                     form.as_long += c - 48;
                 } else if (isspace(c)) {
-                    state = PARSING_NONE;
+                    parsm.type = PARSING_NONE;
+                    if (parsm.isneg) {
+                        form.as_long *= -1;
+                        parsm.isneg = false;
+                    }
                 } else {
                     printf("Unsupported character: '%c'\nExiting now...\n", c);
                     exit(-1);
@@ -139,16 +154,22 @@ Form parse_form(const StringView src) {
                 break;
         }
     }
+
+    if (parsm.type == PARSING_LONG && parsm.isneg) {
+        form.as_long *= -1;
+    }
+
     return form;
 }
 
 int main(void) {
-    StringView sample_source = strv_fromtstr("function-");
+    StringView sample_source = strv_fromtstr("hello-world");
 
     printf("Hello, World!\n");
 
     Form f = parse_form(sample_source);
     printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
+    // printf("%i %li", f.type, f.as_long);
 
     return 0;
 }
