@@ -30,9 +30,9 @@ String alloc_str() {
 void str_pushc(String *s, const char c) {
     if (s->len == s->cap) {
         s->ptr = realloc(s->ptr, s->cap * 2);
+        s->cap *= 2;
     }
-    s->ptr[s->len] = c;
-    s->len++;
+    s->ptr[s->len++] = c;
 }
 
 void str_pushtstr(String *string, const char *tstr) {
