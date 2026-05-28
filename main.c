@@ -42,7 +42,7 @@ void str_pushtstr(String *string, const char *tstr) {
 }
 
 String str_fromtstr(const char *tstr) {
-    String s = str_make(8);
+    String s = str_make();
     str_pushtstr(&s, tstr);
     return s;
 }
@@ -52,6 +52,10 @@ String str_clone(const String from) {
     memcpy(buf, from.ptr, from.len);
     const String s = {buf, from.len, from.cap};
     return s;
+}
+
+void free_str(const String s) {
+    free(s.ptr);
 }
 
 /// Borrowed string, not null-terminated
