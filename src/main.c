@@ -25,9 +25,10 @@ typedef struct {
 RootForms parse_forms(Parst *parst) {
     RootForms root_forms = alloc_root_forms();
     Form form;
+    char c;
 
     for (size_t i = parst->src_idx; i < parst->src.len; parst->src_idx = ++i) {
-        const char c = parst->src.ptr[i];
+        c = parst->src.ptr[i];
         switch (parst->type) {
             case PARSING_NONE:
                 if (isalpha(c)) {
@@ -47,8 +48,7 @@ RootForms parse_forms(Parst *parst) {
                 } else if (isspace(c)) {
                     continue;
                 } else {
-                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
-                    exit(-1);
+                    goto parsing_error;
                 }
                 break;
             case PARSING_WORD:
@@ -58,8 +58,7 @@ RootForms parse_forms(Parst *parst) {
                     parst->type = PARSING_NONE;
                     root_forms_push(&root_forms, &form);
                 } else {
-                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
-                    exit(-1);
+                    goto parsing_error;
                 }
                 break;
             case PARSING_LONG:
@@ -74,8 +73,7 @@ RootForms parse_forms(Parst *parst) {
                     }
                     root_forms_push(&root_forms, &form);
                 } else {
-                    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
-                    exit(-1);
+                    goto parsing_error;
                 }
                 break;
         }
@@ -89,10 +87,15 @@ RootForms parse_forms(Parst *parst) {
     }
 
     return root_forms;
+
+parsing_error:
+    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
+    exit(-1);
 }
 
 int main(void) {
-    StringView sample_source = strv_fromtstr("               1 2 3 4 5 6 7 8 9 10           ");
+    StringView sample_source = strv_fromtstr(
+        "               1 2 3 4 5 6 7 8 9 10           ");
     Parst parst = {
         PARSING_NONE,
         false,
