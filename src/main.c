@@ -2,11 +2,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "root_forms.h"
 #include "string_utils.h"
 #include "forms.h"
+
+#define ASCII_0 48
 
 typedef enum {
     PARSING_NONE,
@@ -17,31 +18,32 @@ typedef enum {
 typedef struct {
     ParsingState type;
     bool isneg;
-} Parsm; // parsing state machine
+    size_t src_idx;
+    StringView src;
+} Parst; // parsing state
 
-RootForms parse_forms(const StringView src) {
-    Parsm parsm = {PARSING_NONE, false};
+RootForms parse_forms(Parst *parst) {
     RootForms root_forms = alloc_root_forms();
     Form form;
 
-    for (size_t i = 0; i < src.len; ++i) {
-        const char c = src.ptr[i];
-        switch (parsm.type) {
+    for (size_t i = parst->src_idx; i < parst->src.len; parst->src_idx = ++i) {
+        const char c = parst->src.ptr[i];
+        switch (parst->type) {
             case PARSING_NONE:
                 if (isalpha(c)) {
-                    parsm.type = PARSING_WORD;
+                    parst->type = PARSING_WORD;
                     form.type = FORM_WORD;
                     form.as_word = alloc_str();
                     str_pushc(&form.as_word, c);
                 } else if (c == '-') {
-                    parsm.type = PARSING_LONG;
-                    parsm.isneg = true;
+                    parst->type = PARSING_LONG;
+                    parst->isneg = true;
                     form.type = FORM_LONG;
                     form.as_long = 0;
                 } else if (isdigit(c)) {
-                    parsm.type = PARSING_LONG;
+                    parst->type = PARSING_LONG;
                     form.type = FORM_LONG;
-                    form.as_long = c - 48;
+                    form.as_long = c - ASCII_0;
                 } else if (isspace(c)) {
                     continue;
                 } else {
@@ -53,7 +55,7 @@ RootForms parse_forms(const StringView src) {
                 if (isalnum(c) || c == '-') {
                     str_pushc(&form.as_word, c);
                 } else if (isspace(c)) {
-                    parsm.type = PARSING_NONE;
+                    parst->type = PARSING_NONE;
                     root_forms_push(&root_forms, &form);
                 } else {
                     fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
@@ -65,10 +67,10 @@ RootForms parse_forms(const StringView src) {
                     form.as_long *= 10;
                     form.as_long += c - 48;
                 } else if (isspace(c)) {
-                    parsm.type = PARSING_NONE;
-                    if (parsm.isneg) {
+                    parst->type = PARSING_NONE;
+                    if (parst->isneg) {
                         form.as_long *= -1;
-                        parsm.isneg = false;
+                        parst->isneg = false;
                     }
                     root_forms_push(&root_forms, &form);
                 } else {
@@ -79,10 +81,10 @@ RootForms parse_forms(const StringView src) {
         }
     }
 
-    if (parsm.type == PARSING_LONG && parsm.isneg) {
+    if (parst->type == PARSING_LONG && parst->isneg) {
         form.as_long *= -1;
     }
-    if (parsm.type != PARSING_NONE) {
+    if (parst->type != PARSING_NONE) {
         root_forms_push(&root_forms, &form);
     }
 
@@ -90,9 +92,15 @@ RootForms parse_forms(const StringView src) {
 }
 
 int main(void) {
-    StringView sample_source = strv_fromtstr("1 2 3 4 5 6 7 8 9 10");
+    StringView sample_source = strv_fromtstr("               1 2 3 4 5 6 7 8 9 10           ");
+    Parst parst = {
+        PARSING_NONE,
+        false,
+        0,
+        sample_source
+    };
 
-    RootForms forms = parse_forms(sample_source);
+    RootForms forms = parse_forms(&parst);
     // printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
     for (size_t i = 0; i < forms.len; i++) {
         const Form f = forms.ptr[i];
