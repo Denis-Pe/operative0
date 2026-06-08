@@ -116,7 +116,7 @@ OpTokensArr op_tokenize(const StringView src) {
 
 unexpected_char:
     printf("Parsing error: Unexpected character found: %c\n", c);
-    exit(EXIT_FAILURE)
+    exit(EXIT_FAILURE);
 }
 
 int main(void) {
