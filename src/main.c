@@ -3,112 +3,128 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "root_forms.h"
 #include "string_utils.h"
-#include "forms.h"
 
 #define ASCII_0 48
 
-typedef enum {
-    PARSING_NONE,
-    PARSING_WORD,
-    PARSING_LONG,
-} ParsingState;
+enum OpTokenType {
+    TOKEN_WORD,
+    TOKEN_OPEN_BRACKET,
+    TOKEN_CLOSE_BRACKET,
+    TOKEN_WHITESPACE,
+    TOKEN_INTEGER
+};
 
 typedef struct {
-    ParsingState type;
-    bool isneg;
+    enum OpTokenType type;
     size_t src_idx;
-    StringView src;
-} Parst; // parsing state
 
-RootForms parse_forms(Parst *parst) {
-    RootForms root_forms = alloc_root_forms();
-    Form form;
-    char c;
+    union {
+        String as_word;
+        char as_open_bracket;
+        char as_close_bracket;
+        String as_whitespace;
+        long as_integer;
+    };
+} OpToken;
 
-    for (size_t i = parst->src_idx; i < parst->src.len; parst->src_idx = ++i) {
-        c = parst->src.ptr[i];
-        switch (parst->type) {
-            case PARSING_NONE:
-                if (isalpha(c)) {
-                    parst->type = PARSING_WORD;
-                    form.type = FORM_WORD;
-                    form.as_word = alloc_str();
-                    str_pushc(&form.as_word, c);
-                } else if (c == '-') {
-                    parst->type = PARSING_LONG;
-                    parst->isneg = true;
-                    form.type = FORM_LONG;
-                    form.as_long = 0;
-                } else if (isdigit(c)) {
-                    parst->type = PARSING_LONG;
-                    form.type = FORM_LONG;
-                    form.as_long = c - ASCII_0;
-                } else if (isspace(c)) {
-                    continue;
-                } else {
-                    goto parsing_error;
-                }
-                break;
-            case PARSING_WORD:
-                if (isalnum(c) || c == '-') {
-                    str_pushc(&form.as_word, c);
-                } else if (isspace(c)) {
-                    parst->type = PARSING_NONE;
-                    root_forms_push(&root_forms, &form);
-                } else {
-                    goto parsing_error;
-                }
-                break;
-            case PARSING_LONG:
-                if (isdigit(c)) {
-                    form.as_long *= 10;
-                    form.as_long += c - 48;
-                } else if (isspace(c)) {
-                    parst->type = PARSING_NONE;
-                    if (parst->isneg) {
-                        form.as_long *= -1;
-                        parst->isneg = false;
-                    }
-                    root_forms_push(&root_forms, &form);
-                } else {
-                    goto parsing_error;
-                }
-                break;
-        }
+void free_token(const OpToken token) {
+    switch (token.type) {
+        case TOKEN_WORD:
+            free_str(token.as_word);
+            break;
+        case TOKEN_WHITESPACE:
+            free_str(token.as_whitespace);
+            break;
+        default: ;
+    };
+}
+
+typedef struct {
+    OpToken *ptr;
+    size_t len;
+    size_t cap;
+} OpTokensArr;
+
+OpTokensArr alloc_tokens_cap(const size_t cap) {
+    OpToken *ptr = malloc(sizeof(OpToken) * cap);
+    const OpTokensArr tokens = {ptr, 0, cap};
+    return tokens;
+}
+
+OpTokensArr alloc_tokens() {
+    return alloc_tokens_cap(16);
+}
+
+void tokens_push(OpTokensArr *root_forms, const OpToken *token) {
+    if (root_forms->len == root_forms->cap) {
+        root_forms->ptr = realloc(root_forms->ptr, root_forms->cap * 2);
+        root_forms->cap *= 2;
+    }
+    root_forms->ptr[root_forms->len++] = *token;
+}
+
+void free_tokens(const OpTokensArr forms) {
+    for (size_t i = 0; i < forms.len; i++) {
+        free_token(forms.ptr[i]);
+    }
+    free(forms.ptr);
+}
+
+OpTokensArr op_tokenize(const StringView src) {
+    OpTokensArr tokens = alloc_tokens();
+
+    if (src.len == 0) {
+        return tokens;
     }
 
-    if (parst->type == PARSING_LONG && parst->isneg) {
-        form.as_long *= -1;
-    }
-    if (parst->type != PARSING_NONE) {
-        root_forms_push(&root_forms, &form);
+    OpToken tok;
+    char c = src.ptr[0];
+    bool turn_negative = false;
+    if (c == '-') {
+        turn_negative = true;
+        tok.type = TOKEN_INTEGER;
+        tok.as_integer = 0;
+    } else if (isdigit(c)) {
+        tok.type = TOKEN_INTEGER;
+        tok.as_integer = c - ASCII_0;
+    } else if (isalpha(c)) {
+        tok.type = TOKEN_WORD;
+        tok.as_word = alloc_str();
+        str_pushc(&tok.as_word, c);
+    } else if (isspace(c)) {
+        tok.type = TOKEN_WHITESPACE;
+        tok.as_whitespace = alloc_str();
+        str_pushc(&tok.as_whitespace, c);
+    } else if (c == '[') {
+        tok.type = TOKEN_OPEN_BRACKET;
+        tok.as_open_bracket = '[';
+        tokens_push(&tokens, &tok);
+    } else if (c == ']') {
+        tok.type = TOKEN_CLOSE_BRACKET;
+        tok.as_close_bracket = ']';
+        tokens_push(&tokens, &tok);
+    } else {
+        goto unexpected_char;
     }
 
-    return root_forms;
+    for (size_t i = 1; i < src.len; i++) {
+        c = src.ptr[i];
+    }
 
-parsing_error:
-    fprintf(stderr, "Unsupported character: '%c'\nExiting now...\n", c);
-    exit(-1);
+    return tokens;
+
+unexpected_char:
+    printf("Parsing error: Unexpected character found: %c\n", c);
+    exit(EXIT_FAILURE)
 }
 
 int main(void) {
-    StringView sample_source = strv_fromtstr(
+    const StringView sample_source = strv_fromtstr(
         "               1 2 3 4 5 6 7 8 9 10           ");
-    Parst parst = {
-        PARSING_NONE,
-        false,
-        0,
-        sample_source
-    };
 
-    RootForms forms = parse_forms(&parst);
-    // printf("%i %.*s\n", f.type, f.as_word.len, f.as_word.ptr);
-    for (size_t i = 0; i < forms.len; i++) {
-        const Form f = forms.ptr[i];
-        printf("%i %li\n", f.type, f.as_long);
-    }
+    OpTokensArr tokens = op_tokenize(sample_source);
+
 
     return 0;
 }
