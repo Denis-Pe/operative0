@@ -73,6 +73,20 @@ void free_tokens(const OpTokensArr forms) {
     free(forms.ptr);
 }
 
+bool is_valid_word_tok_first(const char c) {
+    return isalpha(c)
+           || c == '-'
+           || c == '_';
+}
+
+bool is_valid_word_tok_rest(const char c) {
+    return is_valid_word_tok_first(c) || isdigit(c);
+}
+
+bool iswhitespace(const char c) {
+    return isspace(c);
+}
+
 OpTokensArr op_tokenize(const StringView src) {
     OpTokensArr tokens = alloc_tokens();
 
