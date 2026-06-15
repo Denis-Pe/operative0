@@ -7,28 +7,30 @@
 
 #define ASCII_0 48
 
-enum OpTokenType {
+enum TokenType {
     TOKEN_WORD,
     TOKEN_OPEN_BRACKET,
     TOKEN_CLOSE_BRACKET,
+    TOKEN_DASH,
     TOKEN_WHITESPACE,
     TOKEN_INTEGER
 };
 
 typedef struct {
-    enum OpTokenType type;
+    enum TokenType type;
     size_t src_idx;
 
     union {
         String as_word;
         char as_open_bracket;
         char as_close_bracket;
+        char as_dash;
         String as_whitespace;
         long as_integer;
     };
-} OpToken;
+} Token;
 
-void free_token(const OpToken token) {
+void free_token(const Token token) {
     switch (token.type) {
         case TOKEN_WORD:
             free_str(token.as_word);
@@ -41,13 +43,13 @@ void free_token(const OpToken token) {
 }
 
 typedef struct {
-    OpToken *ptr;
+    Token *ptr;
     size_t len;
     size_t cap;
 } OpTokensArr;
 
 OpTokensArr alloc_tokens_cap(const size_t cap) {
-    OpToken *ptr = malloc(sizeof(OpToken) * cap);
+    Token *ptr = malloc(sizeof(Token) * cap);
     const OpTokensArr tokens = {ptr, 0, cap};
     return tokens;
 }
@@ -56,7 +58,7 @@ OpTokensArr alloc_tokens() {
     return alloc_tokens_cap(16);
 }
 
-void tokens_push(OpTokensArr *root_forms, const OpToken *token) {
+void tokens_push(OpTokensArr *root_forms, const Token *token) {
     if (root_forms->len == root_forms->cap) {
         root_forms->ptr = realloc(root_forms->ptr, root_forms->cap * 2);
         root_forms->cap *= 2;
