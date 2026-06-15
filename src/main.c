@@ -131,7 +131,7 @@ OpTokensArr op_tokenize(const StringView src) {
     return tokens;
 
 unexpected_char:
-    printf("Parsing error: Unexpected character found: %c\n", c);
+    printf("Parsing error: Unexpected character found: Code %i Glyph '%c'\n", c, c);
     exit(EXIT_FAILURE);
 }
 
@@ -141,6 +141,8 @@ int main(void) {
 
     OpTokensArr tokens = op_tokenize(sample_source);
 
+
+    free_tokens(tokens);
 
     return 0;
 }
