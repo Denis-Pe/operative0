@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "string_utils.h"
+#include "seq.h"
 
 #define ASCII_0 48
 
@@ -42,35 +43,12 @@ void free_token(const Token token) {
     };
 }
 
-typedef struct {
-    Token *ptr;
-    size_t len;
-    size_t cap;
-} OpTokensArr;
-
-OpTokensArr alloc_tokens_cap(const size_t cap) {
-    Token *ptr = malloc(sizeof(Token) * cap);
-    const OpTokensArr tokens = {ptr, 0, cap};
-    return tokens;
-}
-
-OpTokensArr alloc_tokens() {
-    return alloc_tokens_cap(16);
-}
-
-void tokens_push(OpTokensArr *root_forms, const Token *token) {
-    if (root_forms->len == root_forms->cap) {
-        root_forms->ptr = realloc(root_forms->ptr, root_forms->cap * 2);
-        root_forms->cap *= 2;
+DEFINE_SEQ(OpTokensArr, tokens, Token)
+void free_tokens(const OpTokensArr tokens) {
+    for (size_t i = 0; i < tokens.len; i++) {
+        free_token(tokens.ptr[i]);
     }
-    root_forms->ptr[root_forms->len++] = *token;
-}
-
-void free_tokens(const OpTokensArr forms) {
-    for (size_t i = 0; i < forms.len; i++) {
-        free_token(forms.ptr[i]);
-    }
-    free(forms.ptr);
+    free(tokens.ptr);
 }
 
 bool is_valid_word_tok_first(const char c) {
@@ -94,38 +72,59 @@ OpTokensArr op_tokenize(const StringView src) {
         return tokens;
     }
 
-    OpToken tok;
-    char c = src.ptr[0];
-    bool turn_negative = false;
-    if (c == '-') {
-        turn_negative = true;
-        tok.type = TOKEN_INTEGER;
-        tok.as_integer = 0;
-    } else if (isdigit(c)) {
-        tok.type = TOKEN_INTEGER;
-        tok.as_integer = c - ASCII_0;
-    } else if (isalpha(c)) {
-        tok.type = TOKEN_WORD;
-        tok.as_word = alloc_str();
-        str_pushc(&tok.as_word, c);
-    } else if (isspace(c)) {
-        tok.type = TOKEN_WHITESPACE;
-        tok.as_whitespace = alloc_str();
-        str_pushc(&tok.as_whitespace, c);
-    } else if (c == '[') {
-        tok.type = TOKEN_OPEN_BRACKET;
-        tok.as_open_bracket = '[';
-        tokens_push(&tokens, &tok);
-    } else if (c == ']') {
-        tok.type = TOKEN_CLOSE_BRACKET;
-        tok.as_close_bracket = ']';
-        tokens_push(&tokens, &tok);
-    } else {
-        goto unexpected_char;
-    }
-
-    for (size_t i = 1; i < src.len; i++) {
+    char c;
+    Token tok;
+    for (size_t i = 0; i < src.len; i++) {
         c = src.ptr[i];
+        printf("Processing char at index %lu '%c'\t", i, c);
+
+        if (c == '[') {
+            if (i > 0) tokens_push(&tokens, &tok);
+            tok.type = TOKEN_OPEN_BRACKET;
+            tok.as_open_bracket = '[';
+            tokens_push(&tokens, &tok);
+        } else if (c == ']') {
+            if (i > 0) tokens_push(&tokens, &tok);
+            tok.type = TOKEN_CLOSE_BRACKET;
+            tok.as_close_bracket = ']';
+            tokens_push(&tokens, &tok);
+        } else if (iswhitespace(c)) {
+            if (i > 0 && tok.type != TOKEN_WHITESPACE) {
+                tokens_push(&tokens, &tok);
+                tok.type = TOKEN_WHITESPACE;
+                tok.as_whitespace = alloc_str();
+            } else if (i == 0) {
+                tok.type = TOKEN_WHITESPACE;
+                tok.as_whitespace = alloc_str();
+            }
+            str_pushc(&tok.as_whitespace, c);
+        } else if (c == '-') {
+            if (i > 0) tokens_push(&tokens, &tok);
+            tok.type = TOKEN_DASH;
+            tok.as_dash = '-';
+            tokens_push(&tokens, &tok);
+        } else if (i > 0 && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
+            str_pushc(&tok.as_word, c);
+        } else if (is_valid_word_tok_first(c)) {
+            if (i > 0) tokens_push(&tokens, &tok);
+            tok.type = TOKEN_WORD;
+            tok.as_word = alloc_str();
+            str_pushc(&tok.as_word, c);
+        } else if (isdigit(c)) {
+            printf("i:%lu type:%d\t", i, tok.type);
+            if (i > 0 && tok.type == TOKEN_INTEGER) {
+                tok.as_integer *= 10;
+                tok.as_integer += c - ASCII_0;
+            } else {
+                if (i > 0) tokens_push(&tokens, &tok);
+                tok.type = TOKEN_INTEGER;
+                tok.as_integer = c - ASCII_0;
+            }
+        } else {
+            goto unexpected_char;
+        }
+
+        printf("%d\n", tok.type);
     }
 
     return tokens;
