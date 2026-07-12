@@ -29,13 +29,6 @@ void fun_spec##_push(SeqType *seq, const ElemType *elem) {\
         seq->cap = new_cap;\
     }\
     seq->ptr[seq->len++] = *elem;\
-}//\
-// void free_tokens(const SeqType seq) {\
-//      for (size_t i = 0; i < seq.len; i++) {\
-//          free_token(seq.ptr[i]);\
-//      }\
-//      free(seq.ptr);\
-// }
-
+}
 
 #endif //OPERATIVE_SEQ_H
