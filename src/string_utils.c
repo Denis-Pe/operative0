@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <seq.h>
 
 void str_pushcstr(String *string, const char *tstr) {
     for (const char *tstrptr = tstr; *tstrptr != '\0'; tstrptr++) {

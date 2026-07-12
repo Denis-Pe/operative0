@@ -14,15 +14,15 @@
     size_t len;\
     size_t cap;\
 } SeqType;\
-SeqType alloc_##fun_spec##_cap(const size_t cap) {\
+static inline SeqType alloc_##fun_spec##_cap(const size_t cap) {\
     ElemType *ptr = malloc(sizeof(ElemType) * cap);\
     const SeqType seq = {ptr, 0, cap};\
     return seq;\
 }\
-SeqType alloc_##fun_spec() {\
+static inline SeqType alloc_##fun_spec() {\
     return alloc_##fun_spec##_cap(DEFAULT_SEQ_SIZE);\
 }\
-void fun_spec##_push(SeqType *seq, const ElemType *elem) {\
+static inline  void fun_spec##_push(SeqType *seq, const ElemType *elem) {\
     if (seq->len == seq->cap) {\
         size_t new_cap = seq->cap? seq->cap*2 : DEFAULT_SEQ_SIZE;\
         seq->ptr = realloc(seq->ptr, new_cap * sizeof(ElemType));\
