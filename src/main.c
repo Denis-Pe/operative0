@@ -97,19 +97,19 @@ OpTokensArr op_tokenize(const StringView src) {
                 tok.type = TOKEN_WHITESPACE;
                 tok.as_whitespace = alloc_str();
             }
-            str_pushc(&tok.as_whitespace, c);
+            str_push(&tok.as_whitespace, &c);
         } else if (c == '-') {
             if (i > 0) tokens_push(&tokens, &tok);
             tok.type = TOKEN_DASH;
             tok.as_dash = '-';
             tokens_push(&tokens, &tok);
         } else if (i > 0 && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
-            str_pushc(&tok.as_word, c);
+            str_push(&tok.as_word, &c);
         } else if (is_valid_word_tok_first(c)) {
             if (i > 0) tokens_push(&tokens, &tok);
             tok.type = TOKEN_WORD;
             tok.as_word = alloc_str();
-            str_pushc(&tok.as_word, c);
+            str_push(&tok.as_word, &c);
         } else if (isdigit(c)) {
             if (i > 0 && tok.type == TOKEN_INTEGER) {
                 tok.as_integer *= 10;
