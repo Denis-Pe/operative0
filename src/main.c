@@ -44,6 +44,7 @@ void free_token(const Token token) {
 }
 
 DEFINE_SEQ(OpTokensArr, tokens, Token)
+
 void free_tokens(const OpTokensArr tokens) {
     for (size_t i = 0; i < tokens.len; i++) {
         free_token(tokens.ptr[i]);
@@ -76,7 +77,6 @@ OpTokensArr op_tokenize(const StringView src) {
     Token tok;
     for (size_t i = 0; i < src.len; i++) {
         c = src.ptr[i];
-        printf("Processing char at index %lu '%c'\t", i, c);
 
         if (c == '[') {
             if (i > 0) tokens_push(&tokens, &tok);
@@ -111,7 +111,6 @@ OpTokensArr op_tokenize(const StringView src) {
             tok.as_word = alloc_str();
             str_pushc(&tok.as_word, c);
         } else if (isdigit(c)) {
-            printf("i:%lu type:%d\t", i, tok.type);
             if (i > 0 && tok.type == TOKEN_INTEGER) {
                 tok.as_integer *= 10;
                 tok.as_integer += c - ASCII_0;
@@ -123,8 +122,6 @@ OpTokensArr op_tokenize(const StringView src) {
         } else {
             goto unexpected_char;
         }
-
-        printf("%d\n", tok.type);
     }
 
     return tokens;
