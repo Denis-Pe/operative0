@@ -4,8 +4,9 @@
 #define DEFAULT_STRING_CAPACITY 8
 #include <stddef.h>
 #include "seq.h"
+#include "error.h"
 
-DEFINE_SEQ(String, str, char);
+DECLARE_SEQ(String, str, char);
 
 void str_pushcstr(String *string, const char *tstr);
 

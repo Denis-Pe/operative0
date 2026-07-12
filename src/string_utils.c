@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "error.h"
+
+DEFINE_SEQ(String, str, char);
 
 void str_pushcstr(String *string, const char *tstr) {
     for (const char *tstrptr = tstr; *tstrptr != '\0'; tstrptr++) {

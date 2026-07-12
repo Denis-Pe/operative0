@@ -5,6 +5,7 @@
 
 #include "string_utils.h"
 #include "seq.h"
+#include "error.h"
 
 #define ASCII_0 48
 
@@ -43,6 +44,7 @@ void free_token(const Token token) {
     };
 }
 
+DECLARE_SEQ(OpTokensArr, tokens, Token)
 DEFINE_SEQ(OpTokensArr, tokens, Token)
 
 void free_tokens(const OpTokensArr tokens) {
