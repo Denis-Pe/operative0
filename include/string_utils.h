@@ -6,7 +6,7 @@
 #include "seq.h"
 #include "error.h"
 
-DECLARE_SEQ(String, str, char);
+DECLARE_SEQ(String, str, char)
 
 void str_pushcstr(String *string, const char *tstr);
 
