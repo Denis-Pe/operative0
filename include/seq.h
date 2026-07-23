@@ -17,7 +17,7 @@
     size_t cap;\
 } SeqType;\
 SeqType alloc_##fun_spec##_cap(const size_t cap);\
-SeqType alloc_##fun_spec();\
+SeqType alloc_##fun_spec(void);\
 void fun_spec##_push(SeqType *seq, const ElemType *elem);
 
 #define DEFINE_SEQ(SeqType, fun_spec, ElemType)\
@@ -27,7 +27,7 @@ SeqType alloc_##fun_spec##_cap(const size_t cap) {\
     const SeqType seq = {ptr, 0, cap};\
     return seq;\
 }\
-SeqType alloc_##fun_spec() {\
+SeqType alloc_##fun_spec(void) {\
     return alloc_##fun_spec##_cap(DEFAULT_SEQ_SIZE);\
 }\
 void fun_spec##_push(SeqType *seq, const ElemType *elem) {\
