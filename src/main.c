@@ -1,9 +1,9 @@
-#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "string_utils.h"
+#include "string/string.h"
+#include "string/pred.h"
 #include "seq.h"
 #include "error.h"
 
@@ -24,11 +24,11 @@ typedef struct {
     size_t len;
 
     union {
-        String as_word;
+        String *as_word;
         char as_open_bracket;
         char as_close_bracket;
         char as_dash;
-        String as_whitespace;
+        String *as_whitespace;
         long as_integer;
     };
 } Token;
@@ -56,18 +56,13 @@ void free_tokens(const OpTokensArr tokens) {
     free(tokens.ptr);
 }
 
-bool is_valid_word_tok_first(const char c) {
-    return isalpha((unsigned char)c)
-           || c == '-'
+bool is_valid_word_tok_first(const uint32_t c) {
+    return c_isletter(c)
            || c == '_';
 }
 
-bool is_valid_word_tok_rest(const char c) {
-    return is_valid_word_tok_first(c) || isdigit((unsigned char)c);
-}
-
-bool iswhitespace(const char c) {
-    return isspace((unsigned char)c);
+bool is_valid_word_tok_rest(const uint32_t c) {
+    return is_valid_word_tok_first(c) || c_isdigit(c);
 }
 
 void emit_token(OpTokensArr *tokens, const Token *tok, bool *has_token) {
@@ -80,15 +75,16 @@ void emit_token(OpTokensArr *tokens, const Token *tok, bool *has_token) {
 OpTokensArr op_tokenize(const StringView src) {
     OpTokensArr tokens = alloc_tokens();
 
-    if (src.len == 0) {
+    const size_t src_len = strv_len(src);
+    if (src_len == 0) {
         return tokens;
     }
 
-    char c;
+    uint32_t c;
     bool has_token = false;
     Token tok = {0};
-    for (size_t i = 0; i < src.len; i++) {
-        c = src.ptr[i];
+    for (size_t i = 0; i < src_len; i++) {
+        c = strv_char_at(src, i);
 
         if (c == '[') {
             emit_token(&tokens, &tok, &has_token);
@@ -108,7 +104,7 @@ OpTokensArr op_tokenize(const StringView src) {
             tok.len = 1;
             tok.as_close_bracket = ']';
             tokens_push(&tokens, &tok);
-        } else if (iswhitespace(c)) {
+        } else if (c_iswhitespace(c)) {
             if (!has_token || tok.type != TOKEN_WHITESPACE) {
                 emit_token(&tokens, &tok, &has_token);
 
@@ -119,7 +115,7 @@ OpTokensArr op_tokenize(const StringView src) {
                 has_token = true;
             }
 
-            str_push(&tok.as_whitespace, &c);
+            str_push(&tok.as_whitespace, c);
             tok.len++;
         } else if (c == '-') {
             emit_token(&tokens, &tok, &has_token);
@@ -131,7 +127,7 @@ OpTokensArr op_tokenize(const StringView src) {
             tok.as_dash = '-';
             tokens_push(&tokens, &tok);
         } else if (has_token && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
-            str_push(&tok.as_word, &c);
+            str_push(&tok.as_word, c);
             tok.len++;
         } else if (is_valid_word_tok_first(c)) {
             emit_token(&tokens, &tok, &has_token);
@@ -140,10 +136,10 @@ OpTokensArr op_tokenize(const StringView src) {
             tok.type = TOKEN_WORD;
             tok.src_idx = i;
             tok.as_word = alloc_str();
-            str_push(&tok.as_word, &c);
+            str_push(&tok.as_word, c);
             tok.len = 1;
             has_token = true;
-        } else if (isdigit((unsigned char)c)) {
+        } else if (c_isdigit((unsigned char) c)) {
             if (has_token && tok.type == TOKEN_INTEGER) {
                 tok.as_integer *= 10;
                 tok.as_integer += c - ASCII_0;
@@ -159,7 +155,7 @@ OpTokensArr op_tokenize(const StringView src) {
                 has_token = true;
             }
         } else {
-            panic_cstr("Parsing error: Unexpected character found: Code %i Glyph '%c'\n", c, c);
+            panicf("Parsing error: Unexpected character found: Code %u Glyph '%c'\n", c, (char) c);
         }
     }
 
@@ -169,11 +165,10 @@ OpTokensArr op_tokenize(const StringView src) {
 }
 
 int main(void) {
-    const StringView sample_source = strv_fromtstr(
+    const StringView sample_source = strv_fromcstr(
         "         [      1 2 3 4 5 6 7 8 9 10   ]  le-symbol       ");
 
     OpTokensArr tokens = op_tokenize(sample_source);
-
 
     free_tokens(tokens);
 
