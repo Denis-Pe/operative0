@@ -31,13 +31,14 @@ SeqType alloc_##fun_spec() {\
     return alloc_##fun_spec##_cap(DEFAULT_SEQ_SIZE);\
 }\
 void fun_spec##_push(SeqType *seq, const ElemType *elem) {\
-   if (seq->len == seq->cap) {\
-       size_t new_cap = seq->cap? seq->cap*2 : DEFAULT_SEQ_SIZE;\
-       seq->ptr = realloc(seq->ptr, new_cap * sizeof(ElemType));\
-       if (seq->ptr == NULL) panic_errno();\
-       seq->cap = new_cap;\
-   }\
-   seq->ptr[seq->len++] = *elem;\
+    if (seq->len == seq->cap) {\
+        size_t new_cap = seq->cap ? seq->cap * 2 : DEFAULT_SEQ_SIZE;\
+        ElemType *new_ptr = realloc(seq->ptr, new_cap * sizeof(ElemType));\
+        if (new_ptr == NULL) panic_errno();\
+        seq->ptr = new_ptr;\
+        seq->cap = new_cap;\
+    }\
+    seq->ptr[seq->len++] = *elem;\
 }
 
 #endif //OPERATIVE_SEQ_H
