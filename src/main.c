@@ -21,6 +21,7 @@ enum TokenType {
 typedef struct {
     enum TokenType type;
     size_t src_idx;
+    size_t len;
 
     union {
         String as_word;
