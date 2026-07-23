@@ -46,6 +46,7 @@ void free_token(const Token token) {
 }
 
 DECLARE_SEQ(OpTokensArr, tokens, Token)
+
 DEFINE_SEQ(OpTokensArr, tokens, Token)
 
 void free_tokens(const OpTokensArr tokens) {
@@ -56,17 +57,24 @@ void free_tokens(const OpTokensArr tokens) {
 }
 
 bool is_valid_word_tok_first(const char c) {
-    return isalpha(c)
+    return isalpha((unsigned char)c)
            || c == '-'
            || c == '_';
 }
 
 bool is_valid_word_tok_rest(const char c) {
-    return is_valid_word_tok_first(c) || isdigit(c);
+    return is_valid_word_tok_first(c) || isdigit((unsigned char)c);
 }
 
 bool iswhitespace(const char c) {
-    return isspace(c);
+    return isspace((unsigned char)c);
+}
+
+void emit_token(OpTokensArr *tokens, const Token *tok, bool *has_token) {
+    if (*has_token) {
+        tokens_push(tokens, tok);
+        *has_token = false;
+    }
 }
 
 OpTokensArr op_tokenize(const StringView src) {
@@ -77,66 +85,92 @@ OpTokensArr op_tokenize(const StringView src) {
     }
 
     char c;
-    Token tok;
+    bool has_token = false;
+    Token tok = {0};
     for (size_t i = 0; i < src.len; i++) {
         c = src.ptr[i];
 
         if (c == '[') {
-            if (i > 0) tokens_push(&tokens, &tok);
+            emit_token(&tokens, &tok, &has_token);
+
+            tok = (Token){0};
             tok.type = TOKEN_OPEN_BRACKET;
+            tok.src_idx = i;
+            tok.len = 1;
             tok.as_open_bracket = '[';
             tokens_push(&tokens, &tok);
         } else if (c == ']') {
-            if (i > 0) tokens_push(&tokens, &tok);
+            emit_token(&tokens, &tok, &has_token);
+
+            tok = (Token){0};
             tok.type = TOKEN_CLOSE_BRACKET;
+            tok.src_idx = i;
+            tok.len = 1;
             tok.as_close_bracket = ']';
             tokens_push(&tokens, &tok);
         } else if (iswhitespace(c)) {
-            if (i > 0 && tok.type != TOKEN_WHITESPACE) {
-                tokens_push(&tokens, &tok);
+            if (!has_token || tok.type != TOKEN_WHITESPACE) {
+                emit_token(&tokens, &tok, &has_token);
+
+                tok = (Token){0};
                 tok.type = TOKEN_WHITESPACE;
+                tok.src_idx = i;
                 tok.as_whitespace = alloc_str();
-            } else if (i == 0) {
-                tok.type = TOKEN_WHITESPACE;
-                tok.as_whitespace = alloc_str();
+                has_token = true;
             }
+
             str_push(&tok.as_whitespace, &c);
+            tok.len++;
         } else if (c == '-') {
-            if (i > 0) tokens_push(&tokens, &tok);
+            emit_token(&tokens, &tok, &has_token);
+
+            tok = (Token){0};
             tok.type = TOKEN_DASH;
+            tok.src_idx = i;
+            tok.len = 1;
             tok.as_dash = '-';
             tokens_push(&tokens, &tok);
-        } else if (i > 0 && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
+        } else if (has_token && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
             str_push(&tok.as_word, &c);
+            tok.len++;
         } else if (is_valid_word_tok_first(c)) {
-            if (i > 0) tokens_push(&tokens, &tok);
+            emit_token(&tokens, &tok, &has_token);
+
+            tok = (Token){0};
             tok.type = TOKEN_WORD;
+            tok.src_idx = i;
             tok.as_word = alloc_str();
             str_push(&tok.as_word, &c);
-        } else if (isdigit(c)) {
-            if (i > 0 && tok.type == TOKEN_INTEGER) {
+            tok.len = 1;
+            has_token = true;
+        } else if (isdigit((unsigned char)c)) {
+            if (has_token && tok.type == TOKEN_INTEGER) {
                 tok.as_integer *= 10;
                 tok.as_integer += c - ASCII_0;
+                tok.len++;
             } else {
-                if (i > 0) tokens_push(&tokens, &tok);
+                emit_token(&tokens, &tok, &has_token);
+
+                tok = (Token){0};
                 tok.type = TOKEN_INTEGER;
+                tok.src_idx = i;
                 tok.as_integer = c - ASCII_0;
+                tok.len = 1;
+                has_token = true;
             }
         } else {
-            goto unexpected_char;
+            panic_cstr("Parsing error: Unexpected character found: Code %i Glyph '%c'\n", c, c);
         }
     }
 
-    return tokens;
+    emit_token(&tokens, &tok, &has_token);
 
-unexpected_char:
-    printf("Parsing error: Unexpected character found: Code %i Glyph '%c'\n", c, c);
-    exit(EXIT_FAILURE);
+    return tokens;
 }
 
 int main(void) {
     const StringView sample_source = strv_fromtstr(
-        "               1 2 3 4 5 6 7 8 9 10           ");
+        "         [      1 2 3 4 5 6 7 8 9 10   ]  le-symbol       ");
 
     OpTokensArr tokens = op_tokenize(sample_source);
 

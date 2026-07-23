@@ -3,7 +3,7 @@
 
 #include "string_utils.h"
 
-void panic_cstr(const char* msg);
+void panic_cstr(const char* format, ...);
 void panic_errno();
 void panic();
 
