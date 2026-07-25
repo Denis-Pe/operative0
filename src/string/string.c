@@ -121,7 +121,7 @@ size_t strv_len(const StringView strv) {
 
 uint32_t strv_char_at(const StringView strv, const size_t index) {
     if (index >= strv._len) {
-        panicf("String access error: capacity %zu index %zu", strv._len, index);
+        panicf("String access error: length %zu index %zu", strv._len, index);
     }
 
     return strv._ptr[index];
