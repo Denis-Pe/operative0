@@ -139,7 +139,7 @@ OpTokensArr op_tokenize(const StringView src) {
             str_push(&tok.as_word, c);
             tok.len = 1;
             has_token = true;
-        } else if (c_isdigit((unsigned char) c)) {
+        } else if (c_isdigit(c)) {
             if (has_token && tok.type == TOKEN_INTEGER) {
                 tok.as_integer *= 10;
                 tok.as_integer += c - ASCII_0;
