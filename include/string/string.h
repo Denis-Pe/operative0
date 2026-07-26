@@ -29,8 +29,10 @@ void free_str(String *s);
 
 /// Borrowed string, not null-terminated
 typedef struct {
-    const uint8_t *_ptr;
-    size_t _len;
+    /// Pointer to data. Direct use reserved for string/ files only
+    const uint8_t *impl_ptr;
+    /// Length of valid bytes in data. Direct use reserved for string/ files only
+    size_t impl_len;
 } StringView;
 
 StringView strv_fromcstr(const char *cstr);

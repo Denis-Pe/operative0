@@ -101,8 +101,8 @@ StringView strv_fromcstr(const char *cstr) {
         len++;
     }
     const StringView strv = (StringView){
-        ._ptr = (uint8_t *) cstr,
-        ._len = len
+        .impl_ptr = (uint8_t *) cstr,
+        .impl_len = len
     };
     return strv;
 }
@@ -110,19 +110,19 @@ StringView strv_fromcstr(const char *cstr) {
 StringView strv_fromstr(const String *str) {
     assert(str != NULL);
     return (StringView){
-        ._ptr = str->ptr,
-        ._len = str->len
+        .impl_ptr = str->ptr,
+        .impl_len = str->len
     };
 }
 
 size_t strv_len(const StringView strv) {
-    return strv._len;
+    return strv.impl_len;
 }
 
 uint32_t strv_char_at(const StringView strv, const size_t index) {
-    if (index >= strv._len) {
-        panicf("String access error: length %zu index %zu", strv._len, index);
+    if (index >= strv.impl_len) {
+        panicf("String access error: length %zu index %zu", strv.impl_len, index);
     }
 
-    return strv._ptr[index];
+    return strv.impl_ptr[index];
 }
