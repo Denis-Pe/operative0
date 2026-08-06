@@ -164,6 +164,32 @@ OpTokensArr op_tokenize(const StringView src) {
     return tokens;
 }
 
+enum ASTNodeType {
+    ASTSymbol,
+    ASTInteger,
+    ASTDouble,
+    ASTBlock
+};
+
+typedef struct ASTNode ASTNode;
+
+DECLARE_SEQ(Block, block, ASTNode)
+
+struct ASTNode {
+    size_t src_idx;
+    size_t src_len;
+    enum ASTNodeType type;
+
+    union {
+        String *as_symbol;
+        long as_integer;
+        double as_double;
+        Block as_block;
+    };
+};
+
+DEFINE_SEQ(Block, block, ASTNode)
+
 int main(void) {
     const StringView sample_source = strv_fromcstr(
         "         [      1 2 3 4 5 6 7 8 9 10   ]  le-symbol       ");
