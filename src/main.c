@@ -45,11 +45,11 @@ void free_token(const Token token) {
     };
 }
 
-DECLARE_SEQ(OpTokensArr, tokens, Token)
+DECLARE_SEQ(Tokens, tokens, Token)
 
-DEFINE_SEQ(OpTokensArr, tokens, Token)
+DEFINE_SEQ(Tokens, tokens, Token)
 
-void free_tokens(const OpTokensArr tokens) {
+void free_tokens(const Tokens tokens) {
     for (size_t i = 0; i < tokens.len; i++) {
         free_token(tokens.ptr[i]);
     }
@@ -65,15 +65,15 @@ bool is_valid_word_tok_rest(const uint32_t c) {
     return is_valid_word_tok_first(c) || c_isdigit(c);
 }
 
-void emit_token(OpTokensArr *tokens, const Token *tok, bool *has_token) {
+void emit_token(Tokens *tokens, const Token *tok, bool *has_token) {
     if (*has_token) {
         tokens_push(tokens, tok);
         *has_token = false;
     }
 }
 
-OpTokensArr op_tokenize(const StringView src) {
-    OpTokensArr tokens = alloc_tokens();
+Tokens tokenize(const StringView src) {
+    Tokens tokens = alloc_tokens();
 
     const size_t src_len = strv_len(src);
     if (src_len == 0) {
@@ -194,7 +194,7 @@ int main(void) {
     const StringView sample_source = strv_fromcstr(
         "         [      1 2 3 4 5 6 7 8 9 10   ]  le-symbol       ");
 
-    OpTokensArr tokens = op_tokenize(sample_source);
+    Tokens tokens = tokenize(sample_source);
 
     free_tokens(tokens);
 
