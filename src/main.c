@@ -11,12 +11,16 @@
 
 enum TokenType {
     TOKEN_WORD,
-    TOKEN_OPEN_BRACKET,
-    TOKEN_CLOSE_BRACKET,
+    TOKEN_BRACKET,
     TOKEN_DASH,
     TOKEN_WHITESPACE,
     TOKEN_INTEGER
 };
+
+typedef struct {
+    size_t depth;
+    char bracket;
+} BracketToken;
 
 typedef struct {
     enum TokenType type;
@@ -25,8 +29,7 @@ typedef struct {
 
     union {
         String *as_word;
-        char as_open_bracket;
-        char as_close_bracket;
+        BracketToken as_bracket;
         char as_dash;
         String *as_whitespace;
         long as_integer;
@@ -83,6 +86,7 @@ Tokens tokenize(const StringView src) {
     uint32_t c;
     bool has_token = false;
     Token tok = {0};
+    size_t depth = 0;
     for (size_t i = 0; i < src_len; i++) {
         c = strv_char_at(src, i);
 
@@ -90,19 +94,21 @@ Tokens tokenize(const StringView src) {
             emit_token(&tokens, &tok, &has_token);
 
             tok = (Token){0};
-            tok.type = TOKEN_OPEN_BRACKET;
+            tok.type = TOKEN_BRACKET;
             tok.src_idx = i;
             tok.len = 1;
-            tok.as_open_bracket = '[';
+            tok.as_bracket.bracket = '[';
+            tok.as_bracket.depth = ++depth;
             tokens_push(&tokens, &tok);
         } else if (c == ']') {
             emit_token(&tokens, &tok, &has_token);
 
             tok = (Token){0};
-            tok.type = TOKEN_CLOSE_BRACKET;
+            tok.type = TOKEN_BRACKET;
             tok.src_idx = i;
             tok.len = 1;
-            tok.as_close_bracket = ']';
+            tok.as_bracket.bracket = ']';
+            tok.as_bracket.depth = depth--;
             tokens_push(&tokens, &tok);
         } else if (c_iswhitespace(c)) {
             if (!has_token || tok.type != TOKEN_WHITESPACE) {
