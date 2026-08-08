@@ -171,7 +171,7 @@ Tokens tokenize(const StringView src) {
 }
 
 enum ASTNodeType {
-    AST_SYMBOL,
+    AST_WORD,
     AST_INTEGER,
     AST_DOUBLE,
     AST_BLOCK
@@ -187,7 +187,7 @@ struct ASTNode {
     enum ASTNodeType type;
 
     union {
-        String *as_symbol;
+        String *as_word;
         long as_integer;
         double as_double;
         Block as_block;
@@ -198,7 +198,7 @@ DEFINE_SEQ(Block, block, ASTNode)
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "         [      1 2 3 4 5 6 7 8 9 10   ]  le-symbol       ");
+        "         [      1 2 3 4 5 6 7 8 9 10   ]  le-word       ");
 
     Tokens tokens = tokenize(sample_source);
 
