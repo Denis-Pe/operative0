@@ -171,10 +171,10 @@ Tokens tokenize(const StringView src) {
 }
 
 enum ASTNodeType {
-    ASTSymbol,
-    ASTInteger,
-    ASTDouble,
-    ASTBlock
+    AST_SYMBOL,
+    AST_INTEGER,
+    AST_DOUBLE,
+    AST_BLOCK
 };
 
 typedef struct ASTNode ASTNode;
