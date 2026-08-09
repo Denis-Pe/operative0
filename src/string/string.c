@@ -33,6 +33,7 @@ String *alloc_str(void) {
 
 void str_push(String **string, const uint32_t character) {
     assert(string != NULL);
+    assert(*string != NULL);
     assert(character <= 127);
 
     if ((*string)->len == (*string)->cap) {
@@ -47,6 +48,7 @@ void str_push(String **string, const uint32_t character) {
 
 void str_pushcstr(String **string, const char *cstr) {
     assert(string != NULL);
+    assert(*string != NULL);
     assert(cstr != NULL);
 
     char *ptr;
