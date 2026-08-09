@@ -101,6 +101,10 @@ Tokens tokenize(const StringView src) {
             tok.as_bracket.depth = ++depth;
             tokens_push(&tokens, &tok);
         } else if (c == ']') {
+            if (depth == 0) {
+                panicf("Source has unmatched brackets: extra closing bracket: index %zu\n", i);
+            }
+
             emit_token(&tokens, &tok, &has_token);
 
             tok = (Token){0};
@@ -163,6 +167,10 @@ Tokens tokenize(const StringView src) {
         } else {
             panicf("Parsing error: Unexpected character found: Code %u Glyph '%c'\n", c, (char) c);
         }
+    }
+
+    if (depth != 0) {
+        panicf("Source has unmatched brackets: too many opening brackets\n");
     }
 
     emit_token(&tokens, &tok, &has_token);
