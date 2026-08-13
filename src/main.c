@@ -8,6 +8,7 @@
 #include "error.h"
 
 #define ASCII_0 48
+#define INDENT_WIDTH 4
 
 enum TokenType {
     TOKEN_WORD,
@@ -202,15 +203,172 @@ struct ASTNode {
     };
 };
 
+void free_block(Block block);
+
+void free_node(const ASTNode node) {
+    switch (node.type) {
+        case AST_BLOCK:
+            free_block(node.as_block);
+            break;
+        case AST_WORD:
+            free_str(node.as_word);
+            break;
+        default: ;
+    }
+}
+
 DEFINE_SEQ(Block, block, ASTNode)
+
+void free_block(const Block block) {
+    for (size_t i = 0; i < block.len; i++) {
+        free_node(block.ptr[i]);
+    }
+    free(block.ptr);
+}
+
+typedef struct {
+    Token *ptr;
+    size_t len;
+} TokensSlice;
+
+void emit_node(Block *root, const ASTNode *node, bool *has_node) {
+    if (*has_node) {
+        *has_node = false;
+        block_push(root, node);
+    }
+}
+
+Block parse_tokens(TokensSlice tokens, size_t *i) {
+    Block root = alloc_block();
+
+    ASTNode node;
+    bool has_node = false;
+    for (; *i < tokens.len; (*i)++) {
+        const Token tok = tokens.ptr[*i];
+
+        switch (tok.type) {
+            case TOKEN_WHITESPACE:
+                emit_node(&root, &node, &has_node);
+                break;
+            case TOKEN_BRACKET:
+                emit_node(&root, &node, &has_node);
+                if (tok.as_bracket.bracket == '[') {
+                    node.type = AST_BLOCK;
+                    (*i)++;
+                    node.as_block = parse_tokens(
+                        (TokensSlice){tokens.ptr + 1, tokens.len - 1},
+                        i);
+                    node.src_idx = tok.src_idx;
+                    const Token closing_bracket = tokens.ptr[(*i)-1];
+                    node.src_len = closing_bracket.src_idx - node.src_idx;
+                    has_node = true;
+                } else {
+                    (*i)++;
+                    return root;
+                }
+                break;
+            case TOKEN_DASH:
+                if (has_node && node.type == AST_WORD) {
+                    str_push(&node.as_word, '-');
+                    node.src_len++;
+                } else {
+                    emit_node(&root, &node, &has_node);
+                    node.type = AST_WORD;
+                    node.src_idx = tok.src_idx;
+                    node.src_len = 1;
+                    node.as_word = alloc_str_fromcstr("-");
+                    has_node = true;
+                }
+                break;
+            case TOKEN_INTEGER:
+                if (has_node && node.type == AST_WORD && str_comprcstr(node.as_word, "-") == 0) {
+                    free_str(node.as_word);
+                    node.type = AST_INTEGER;
+                    node.src_idx = tok.src_idx;
+                    node.src_len = tok.len;
+                    node.as_integer = tok.as_integer * -1;
+                    has_node = true;
+                } else {
+                    emit_node(&root, &node, &has_node);
+                    node.type = AST_INTEGER;
+                    node.src_idx = tok.src_idx;
+                    node.src_len = tok.len;
+                    node.as_integer = tok.as_integer;
+                    has_node = true;
+                }
+                break;
+            case TOKEN_WORD:
+                if (has_node && node.type == AST_WORD) {
+                    str_pushstr(&node.as_word, tok.as_word);
+                    node.src_len += tok.len;
+                } else {
+                    emit_node(&root, &node, &has_node);
+                    node.type = AST_WORD;
+                    node.src_idx = tok.src_idx;
+                    node.src_len = tok.len;
+                    node.as_word = alloc_str_clone(tok.as_word);
+                    has_node = true;
+                }
+                break;
+            default:
+                panic_switch();
+        }
+    }
+
+    emit_node(&root, &node, &has_node);
+
+    return root;
+}
+
+void printatom(const ASTNode node) {
+    switch (node.type) {
+        case AST_WORD:
+            printf("Word: ");
+            fprintstr(stdout, node.as_word);
+            break;
+        case AST_INTEGER:
+            printf("Integer: %ld", node.as_integer);
+            break;
+        case AST_DOUBLE:
+            printf("Double: %lf", node.as_double);
+            break;
+        default: ;
+    }
+}
+
+void printast(const Block root, const size_t indent) {
+    for (size_t i = 0; i < root.len; i++) {
+        const ASTNode node = root.ptr[i];
+
+        for (size_t j = 0; j < indent * INDENT_WIDTH; j++) printf(" ");
+
+        if (node.type == AST_BLOCK) {
+            printf("Block: [\n");
+            printast(node.as_block, indent + 1);
+            printf("]");
+        } else {
+            printatom(node);
+        }
+        printf("\n");
+
+        fflush(stdout);
+    }
+}
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "         [      1 2 3 4 5 6 7 8 9 10   ]  le-word       ");
+        "              1 2 3 4 5 6 [ 7 8 9 10   le-word  -00000327156028 --- - ]     ");
 
     Tokens tokens = tokenize(sample_source);
 
+    size_t parsing_index = 0;
+    const Block root = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, &parsing_index);
+
+    printast(root, 0);
+
+
     free_tokens(tokens);
+    free_block(root);
 
     return 0;
 }
