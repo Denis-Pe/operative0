@@ -260,7 +260,7 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                         i);
                     node.src_idx = tok.src_idx;
                     const Token closing_bracket = tokens.ptr[(*i)-1];
-                    node.src_len = closing_bracket.src_idx - node.src_idx;
+                    node.src_len = closing_bracket.src_idx - node.src_idx + 2;
                     has_node = true;
                 } else {
                     (*i)++;
