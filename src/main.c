@@ -306,9 +306,8 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                     if (nexti < tokens.len) {
                         Token nextt = tokens.ptr[nexti];
                         if (nextt.type == TOKEN_INTEGER) {
-                            double exp = 1.0;
-                            for (size_t jj = 0; jj < nextt.len; jj++) exp /= 10.0;
-                            double point = ((double) nextt.as_integer) * exp;
+                            double point = ((double) nextt.as_integer);
+                            for (size_t jj = 0; jj < nextt.len; jj++) point /= 10.0;
                             if (isneg)
                                 node.as_double -= point;
                             else
