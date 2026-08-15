@@ -14,6 +14,7 @@ enum TokenType {
     TOKEN_WORD,
     TOKEN_BRACKET,
     TOKEN_DASH,
+    TOKEN_DOT,
     TOKEN_WHITESPACE,
     TOKEN_INTEGER
 };
@@ -32,6 +33,7 @@ typedef struct {
         String *as_word;
         BracketToken as_bracket;
         char as_dash;
+        char as_dot;
         String *as_whitespace;
         long as_integer;
     };
@@ -136,6 +138,15 @@ Tokens tokenize(const StringView src) {
             tok.src_idx = i;
             tok.len = 1;
             tok.as_dash = '-';
+            tokens_push(&tokens, &tok);
+        } else if (c == '.') {
+            emit_token(&tokens, &tok, &has_token);
+
+            tok = (Token){0};
+            tok.type = TOKEN_DOT;
+            tok.src_idx = i;
+            tok.len = 1;
+            tok.as_dash = '.';
             tokens_push(&tokens, &tok);
         } else if (has_token && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
             str_push(&tok.as_word, c);
@@ -259,7 +270,7 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                         (TokensSlice){tokens.ptr + 1, tokens.len - 1},
                         i);
                     node.src_idx = tok.src_idx;
-                    const Token closing_bracket = tokens.ptr[(*i)-1];
+                    const Token closing_bracket = tokens.ptr[(*i) - 1];
                     node.src_len = closing_bracket.src_idx - node.src_idx + 2;
                     has_node = true;
                 } else {
@@ -277,6 +288,40 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                     node.src_idx = tok.src_idx;
                     node.src_len = 1;
                     node.as_word = alloc_str_fromcstr("-");
+                    has_node = true;
+                }
+                break;
+            case TOKEN_DOT:
+                if (has_node && node.type == AST_WORD) {
+                    str_push(&node.as_word, '.');
+                    node.src_len++;
+                } else if (has_node && node.type == AST_INTEGER) {
+                    // -?\d+\. case
+                    node.src_len++;
+                    node.type = AST_DOUBLE;
+                    bool isneg = node.as_integer < 0;
+                    node.as_double = (double) node.as_integer;
+                    // -?\d+\.\d+ case
+                    size_t nexti = *i + 1;
+                    if (nexti < tokens.len) {
+                        Token nextt = tokens.ptr[nexti];
+                        if (nextt.type == TOKEN_INTEGER) {
+                            double exp = 1.0;
+                            for (size_t jj = 0; jj < nextt.len; jj++) exp /= 10.0;
+                            double point = ((double) nextt.as_integer) * exp;
+                            if (isneg)
+                                node.as_double -= point;
+                            else
+                                node.as_double += point;
+                        }
+                    }
+                    *i = nexti;
+                } else {
+                    emit_node(&root, &node, &has_node);
+                    node.type = AST_WORD;
+                    node.src_idx = tok.src_idx;
+                    node.src_len = 1;
+                    node.as_word = alloc_str_fromcstr(".");
                     has_node = true;
                 }
                 break;
@@ -358,7 +403,7 @@ void printast(const Block root, const size_t indent) {
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "              1 2 3 4 5 6 [ 7 8 9 10   le-word  -00000327156028 --- - ]     ");
+        "              1 2 3 4 5 6 [ 7 8 9 123456.7890123456 [ -0000001.00001 ]   le-word  -00000327156028 --- - 2 ]     ");
 
     Tokens tokens = tokenize(sample_source);
 
