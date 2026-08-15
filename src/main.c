@@ -345,6 +345,7 @@ void printast(const Block root, const size_t indent) {
         if (node.type == AST_BLOCK) {
             printf("Block: [\n");
             printast(node.as_block, indent + 1);
+            for (size_t j = 0; j < indent * INDENT_WIDTH; j++) printf(" ");
             printf("]");
         } else {
             printatom(node);
