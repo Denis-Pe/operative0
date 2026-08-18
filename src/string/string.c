@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -124,6 +125,17 @@ int str_comprcstr(const String *str, const char *cstr) {
     } else {
         return 0;
     }
+}
+
+bool str_contains(const String *str, const uint32_t character) {
+    for (size_t i = 0; i < str->len; i++) {
+        const uint8_t c = str->ptr[i];
+        assert(c <= 127);
+        if (c == character) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void fprintstr(FILE *stream, const String *str) {

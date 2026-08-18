@@ -4,6 +4,7 @@
 
 #ifndef OPERATIVE_STRING_H
 #define OPERATIVE_STRING_H
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,7 +29,9 @@ uint32_t str_char_at(const String *str, size_t index);
 
 size_t str_len(const String *str);
 
-int str_comprcstr(const String *str, const char* cstr);
+int str_comprcstr(const String *str, const char *cstr);
+
+bool str_contains(const String *str, uint32_t character);
 
 void fprintstr(FILE *stream, const String *str);
 
