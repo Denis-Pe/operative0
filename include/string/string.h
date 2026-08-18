@@ -6,6 +6,7 @@
 #define OPERATIVE_STRING_H
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef struct String String;
 
@@ -17,6 +18,8 @@ void str_push(String **string, uint32_t character);
 
 void str_pushcstr(String **string, const char *cstr);
 
+void str_pushstr(String **string, const String *new_data);
+
 String *alloc_str_fromcstr(const char *cstr);
 
 String *alloc_str_clone(const String *from);
@@ -24,6 +27,10 @@ String *alloc_str_clone(const String *from);
 uint32_t str_char_at(const String *str, size_t index);
 
 size_t str_len(const String *str);
+
+int str_comprcstr(const String *str, const char* cstr);
+
+void fprintstr(FILE *stream, const String *str);
 
 void free_str(String *s);
 

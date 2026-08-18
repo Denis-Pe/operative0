@@ -5,6 +5,7 @@
 #include "string/string.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,6 +60,19 @@ void str_pushcstr(String **string, const char *cstr) {
     }
 }
 
+// TODO optimize by directly allocating enough room + memcpy rather than pushing 1 by 1
+void str_pushstr(String **string, const String *new_data) {
+    assert(string != NULL);
+    assert(*string != NULL);
+    assert(new_data != NULL);
+
+    for (size_t i = 0; i < new_data->len; i++) {
+        const uint8_t c = new_data->ptr[i];
+        assert(c <= 127);
+        str_push(string, c);
+    }
+}
+
 String *alloc_str_fromcstr(const char *cstr) {
     assert(cstr != NULL);
     String *s = alloc_str();
@@ -86,6 +100,35 @@ uint32_t str_char_at(const String *str, const size_t index) {
 size_t str_len(const String *str) {
     assert(str != NULL);
     return str->len;
+}
+
+int str_comprcstr(const String *str, const char *cstr) {
+    assert(str != NULL);
+    assert(cstr != NULL);
+
+    size_t i = 0;
+    for (; i < str->len && cstr[i] != '\0'; i++) {
+        assert(str->ptr[i] <= 127);
+        assert(cstr[i] <= 127);
+        const int diff = str->ptr[i] - cstr[i];
+        if (diff) {
+            return diff;
+        }
+    }
+
+    // length differences
+    if (i == str->len && cstr[i] != '\0') {
+        return cstr[i];
+    } else if (i < str->len && cstr[i] == '\0') {
+        return str->ptr[i];
+    } else {
+        return 0;
+    }
+}
+
+void fprintstr(FILE *stream, const String *str) {
+    assert(str->len <= INT_MAX);
+    fprintf(stream, "%.*s", str->len, (char *) str->ptr);
 }
 
 void free_str(String *s) {
