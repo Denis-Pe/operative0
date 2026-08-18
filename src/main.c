@@ -146,7 +146,7 @@ Tokens tokenize(const StringView src) {
             tok.type = TOKEN_DOT;
             tok.src_idx = i;
             tok.len = 1;
-            tok.as_dash = '.';
+            tok.as_dot = '.';
             tokens_push(&tokens, &tok);
         } else if (has_token && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
             str_push(&tok.as_word, c);
