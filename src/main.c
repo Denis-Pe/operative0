@@ -256,6 +256,7 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
     bool has_node = false;
     for (; *i < tokens.len; (*i)++) {
         const Token tok = tokens.ptr[*i];
+        const size_t nexti = *i + 1;
 
         switch (tok.type) {
             case TOKEN_WHITESPACE:
@@ -299,12 +300,11 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                     // -?\d+\. case
                     node.src_len++;
                     node.type = AST_DOUBLE;
-                    bool isneg = node.as_integer < 0;
+                    const bool isneg = node.as_integer < 0;
                     node.as_double = (double) node.as_integer;
                     // -?\d+\.\d+ case
-                    size_t nexti = *i + 1;
                     if (nexti < tokens.len) {
-                        Token nextt = tokens.ptr[nexti];
+                        const Token nextt = tokens.ptr[nexti];
                         if (nextt.type == TOKEN_INTEGER) {
                             double point = ((double) nextt.as_integer);
                             for (size_t jj = 0; jj < nextt.len; jj++) point /= 10.0;
