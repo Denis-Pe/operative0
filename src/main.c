@@ -268,7 +268,7 @@ Block parse_tokens(TokensSlice tokens, size_t *i) {
                     node.type = AST_BLOCK;
                     (*i)++;
                     node.as_block = parse_tokens(
-                        (TokensSlice){tokens.ptr + 1, tokens.len - 1},
+                        tokens,
                         i);
                     node.src_idx = tok.src_idx;
                     const Token closing_bracket = tokens.ptr[(*i) - 1];
