@@ -118,9 +118,9 @@ int str_comprcstr(const String *str, const char *cstr) {
 
     // length differences
     if (i == str->len && cstr[i] != '\0') {
-        return cstr[i];
+        return -1;
     } else if (i < str->len && cstr[i] == '\0') {
-        return str->ptr[i];
+        return 1;
     } else {
         return 0;
     }
