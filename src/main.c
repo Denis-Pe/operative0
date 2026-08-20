@@ -279,7 +279,7 @@ ASTNode parse_number(const Token token) {
                 fprintf(stderr, " is too large to fit in 64 bits.\n");
                 panicf("");
             }
-            if (__builtin_add_overflow(a, (isneg ? (-1 * (int64_t)(c - ASCII_0)) : (int64_t)(c - ASCII_0)), &a)) {
+            if (__builtin_add_overflow(a, (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0)), &a)) {
                 fprintf(stderr, "Panic: Parsing error: number ");
                 fprintstr(stderr, token.as_number);
                 fprintf(stderr, " is too large to fit in 64 bits.\n");
@@ -387,7 +387,7 @@ int main(void) {
     const StringView sample_source = strv_fromcstr(
         "              -1 2 3 -4009000000000000 5 6 [ -.7 8 -9 123456.7890123456 [ -0000001.000001 ]   le.wo-rd  -00000327156028 --- - 2 ]     ");
 
-    Tokens tokens = tokenize(sample_source);
+    const Tokens tokens = tokenize(sample_source);
 
     size_t parsing_index = 0;
     const Block root = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, &parsing_index);
