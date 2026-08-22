@@ -53,6 +53,12 @@ size_t strv_len(StringView strv);
 
 uint32_t strv_char_at(StringView strv, size_t index);
 
+int strv_comprcstr(StringView strv, const char *cstr);
+
+bool strv_contains(StringView strv, uint32_t character);
+
 StringView strv_slice(StringView strv, size_t begin, size_t length);
+
+void fprintstrv(FILE *stream, StringView strv);
 
 #endif //OPERATIVE_STRING_H

@@ -104,38 +104,11 @@ size_t str_len(const String *str) {
 }
 
 int str_comprcstr(const String *str, const char *cstr) {
-    assert(str != NULL);
-    assert(cstr != NULL);
-
-    size_t i = 0;
-    for (; i < str->len && cstr[i] != '\0'; i++) {
-        assert(str->ptr[i] <= 127);
-        assert(cstr[i] <= 127);
-        const int diff = str->ptr[i] - cstr[i];
-        if (diff) {
-            return diff;
-        }
-    }
-
-    // length differences
-    if (i == str->len && cstr[i] != '\0') {
-        return -1;
-    } else if (i < str->len && cstr[i] == '\0') {
-        return 1;
-    } else {
-        return 0;
-    }
+    return strv_comprcstr(strv_fromstr(str), cstr);
 }
 
 bool str_contains(const String *str, const uint32_t character) {
-    for (size_t i = 0; i < str->len; i++) {
-        const uint8_t c = str->ptr[i];
-        assert(c <= 127);
-        if (c == character) {
-            return true;
-        }
-    }
-    return false;
+    return strv_contains(strv_fromstr(str), character);
 }
 
 void fprintstr(FILE *stream, const String *str) {
@@ -185,7 +158,48 @@ uint32_t strv_char_at(const StringView strv, const size_t index) {
     return strv.impl_ptr[index];
 }
 
+int strv_comprcstr(const StringView strv, const char *cstr) {
+    assert(strv.impl_ptr != NULL);
+    assert(cstr != NULL);
+
+    size_t i = 0;
+    for (; i < strv.impl_len && cstr[i] != '\0'; i++) {
+        assert(strv.impl_ptr[i] <= 127);
+        assert(cstr[i] <= 127);
+        const int diff = strv.impl_ptr[i] - cstr[i];
+        if (diff) {
+            return diff;
+        }
+    }
+
+    // length differences
+    if (i == strv.impl_len && cstr[i] != '\0') {
+        return -1;
+    } else if (i < strv.impl_len && cstr[i] == '\0') {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+bool strv_contains(const StringView strv, const uint32_t character) {
+    for (size_t i = 0; i < strv.impl_len; i++) {
+        const uint8_t c = strv.impl_ptr[i];
+        assert(c <= 127);
+        if (c == character) {
+            return true;
+        }
+    }
+    return false;
+}
+
 StringView strv_slice(const StringView strv, const size_t begin, const size_t length) {
     assert(strv.impl_ptr != NULL);
+    assert(strv.impl_ptr + begin + length <= strv.impl_ptr + strv.impl_len);
     return (StringView){.impl_ptr = strv.impl_ptr + begin, .impl_len = length};
+}
+
+void fprintstrv(FILE *stream, const StringView strv) {
+    assert(strv.impl_len <= INT_MAX);
+    fprintf(stream, "%.*s", strv.impl_len, (char *) strv.impl_ptr);
 }

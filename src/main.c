@@ -28,26 +28,14 @@ typedef struct {
     size_t len;
 
     union {
-        String *as_word;
+        StringView as_word;
         BracketToken as_bracket;
-        String *as_whitespace;
-        String *as_number;
+        StringView as_whitespace;
+        StringView as_number;
     };
 } Token;
 
 void free_token(const Token token) {
-    switch (token.type) {
-        case TOKEN_WORD:
-            free_str(token.as_word);
-            break;
-        case TOKEN_WHITESPACE:
-            free_str(token.as_whitespace);
-            break;
-        case TOKEN_NUMBER:
-            free_str(token.as_number);
-            break;
-        default: ;
-    };
 }
 
 DECLARE_SEQ(Tokens, tokens, Token)
@@ -89,6 +77,7 @@ Tokens tokenize(const StringView src) {
     bool has_token = false;
     Token tok = {0};
     size_t depth = 0;
+    size_t slice_begin = 0;
     for (size_t i = 0; i < src_len; i++) {
         c = strv_char_at(src, i);
 
@@ -123,16 +112,16 @@ Tokens tokenize(const StringView src) {
                 tok = (Token){0};
                 tok.type = TOKEN_WHITESPACE;
                 tok.src_idx = i;
-                tok.as_whitespace = alloc_str();
+                slice_begin = i;
                 has_token = true;
             }
 
-            str_push(&tok.as_whitespace, c);
+            tok.as_whitespace = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len++;
         } else if (c_isdigit(c)) {
-            if (has_token && tok.type == TOKEN_WORD && (str_comprcstr(tok.as_word, "-") == 0
-                                                        || str_comprcstr(tok.as_word, "-.") == 0
-                                                        || str_comprcstr(tok.as_word, ".") == 0)) {
+            if (has_token && tok.type == TOKEN_WORD && (strv_comprcstr(tok.as_word, "-") == 0
+                                                        || strv_comprcstr(tok.as_word, "-.") == 0
+                                                        || strv_comprcstr(tok.as_word, ".") == 0)) {
                 // type punning
                 tok.type = TOKEN_NUMBER;
             } else if (!has_token || tok.type != TOKEN_NUMBER) {
@@ -140,16 +129,16 @@ Tokens tokenize(const StringView src) {
                 tok.type = TOKEN_NUMBER;
                 tok.src_idx = i;
                 tok.len = 0;
-                tok.as_number = alloc_str();
+                slice_begin = i;
                 has_token = true;
             }
-            str_push(&tok.as_number, c);
+            tok.as_number = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len++;
-        } else if (c == '.' && has_token && tok.type == TOKEN_NUMBER && !str_contains(tok.as_number, '.')) {
-            str_push(&tok.as_number, c);
+        } else if (c == '.' && has_token && tok.type == TOKEN_NUMBER && !strv_contains(tok.as_number, '.')) {
+            tok.as_number = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len++;
         } else if (has_token && tok.type == TOKEN_WORD && is_valid_word_tok_rest(c)) {
-            str_push(&tok.as_word, c);
+            tok.as_word = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len++;
         } else if (is_valid_word_tok_first(c)) {
             emit_token(&tokens, &tok, &has_token);
@@ -157,8 +146,8 @@ Tokens tokenize(const StringView src) {
             tok = (Token){0};
             tok.type = TOKEN_WORD;
             tok.src_idx = i;
-            tok.as_word = alloc_str();
-            str_push(&tok.as_word, c);
+            slice_begin = i;
+            tok.as_word = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len = 1;
             has_token = true;
         } else {
@@ -192,7 +181,7 @@ struct ASTNode {
     enum ASTNodeType type;
 
     union {
-        String *as_word;
+        StringView as_word;
         int64_t as_integer;
         double as_double;
         Block as_block;
@@ -205,9 +194,6 @@ void free_node(const ASTNode node) {
     switch (node.type) {
         case AST_BLOCK:
             free_block(node.as_block);
-            break;
-        case AST_WORD:
-            free_str(node.as_word);
             break;
         default: ;
     }
@@ -239,11 +225,11 @@ ASTNode parse_number(const Token token) {
     result.src_idx = token.src_idx;
     result.src_len = token.len;
     size_t i = 0;
-    uint32_t c = str_char_at(token.as_number, i);
+    uint32_t c = strv_char_at(token.as_number, i);
     const bool isneg = c == '-';
-    if (isneg) c = str_char_at(token.as_number, ++i);
-    const size_t len = str_len(token.as_number);
-    if (str_contains(token.as_number, '.')) {
+    if (isneg) c = strv_char_at(token.as_number, ++i);
+    const size_t len = strv_len(token.as_number);
+    if (strv_contains(token.as_number, '.')) {
         result.type = AST_DOUBLE;
         double big = 0.0;
         double small = 0.0;
@@ -253,12 +239,12 @@ ASTNode parse_number(const Token token) {
                 big -= ((double) (c - ASCII_0));
             else
                 big += ((double) (c - ASCII_0));
-            c = str_char_at(token.as_number, ++i);
+            c = strv_char_at(token.as_number, ++i);
         }
         i++; // skip '.'
         size_t e = 0;
         for (; i < len; i++, e++) {
-            c = str_char_at(token.as_number, i);
+            c = strv_char_at(token.as_number, i);
             small *= 10.0;
             if (isneg)
                 small -= ((double) (c - ASCII_0));
@@ -271,17 +257,17 @@ ASTNode parse_number(const Token token) {
         result.type = AST_INTEGER;
         int64_t a = 0;
         for (; i < len; i++) {
-            c = str_char_at(token.as_number, i);
+            c = strv_char_at(token.as_number, i);
 
             if (__builtin_mul_overflow(a, 10, &a)) {
                 fprintf(stderr, "Panic: Parsing error: number ");
-                fprintstr(stderr, token.as_number);
+                fprintstrv(stderr, token.as_number);
                 fprintf(stderr, " is too large to fit in 64 bits.\n");
                 panicf("");
             }
             if (__builtin_add_overflow(a, (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0)), &a)) {
                 fprintf(stderr, "Panic: Parsing error: number ");
-                fprintstr(stderr, token.as_number);
+                fprintstrv(stderr, token.as_number);
                 fprintf(stderr, " is too large to fit in 64 bits.\n");
                 panicf("");
             }
@@ -325,17 +311,12 @@ Block parse_tokens(const TokensSlice tokens, size_t *i) {
                 has_node = true;
                 break;
             case TOKEN_WORD:
-                if (has_node && node.type == AST_WORD) {
-                    str_pushstr(&node.as_word, tok.as_word);
-                    node.src_len += tok.len;
-                } else {
-                    emit_node(&root, &node, &has_node);
-                    node.type = AST_WORD;
-                    node.src_idx = tok.src_idx;
-                    node.src_len = tok.len;
-                    node.as_word = alloc_str_clone(tok.as_word);
-                    has_node = true;
-                }
+                emit_node(&root, &node, &has_node);
+                node.type = AST_WORD;
+                node.src_idx = tok.src_idx;
+                node.src_len = tok.len;
+                node.as_word = tok.as_word;
+                has_node = true;
                 break;
             default:
                 panic_switch();
@@ -351,7 +332,7 @@ void printatom(const ASTNode node) {
     switch (node.type) {
         case AST_WORD:
             printf("Word: ");
-            fprintstr(stdout, node.as_word);
+            fprintstrv(stdout, node.as_word);
             break;
         case AST_INTEGER:
             printf("Integer: %ld", node.as_integer);
