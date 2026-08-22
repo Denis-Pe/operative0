@@ -177,6 +177,7 @@ size_t strv_len(const StringView strv) {
 }
 
 uint32_t strv_char_at(const StringView strv, const size_t index) {
+    assert(strv.impl_ptr != NULL);
     if (index >= strv.impl_len) {
         panicf("String access error: length %zu index %zu", strv.impl_len, index);
     }
