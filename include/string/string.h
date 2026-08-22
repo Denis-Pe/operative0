@@ -53,4 +53,6 @@ size_t strv_len(StringView strv);
 
 uint32_t strv_char_at(StringView strv, size_t index);
 
+StringView strv_slice(StringView strv, size_t begin, size_t length);
+
 #endif //OPERATIVE_STRING_H

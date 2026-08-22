@@ -184,3 +184,8 @@ uint32_t strv_char_at(const StringView strv, const size_t index) {
 
     return strv.impl_ptr[index];
 }
+
+StringView strv_slice(const StringView strv, const size_t begin, const size_t length) {
+    assert(strv.impl_ptr != NULL);
+    return (StringView){.impl_ptr = strv.impl_ptr + begin, .impl_len = length};
+}
