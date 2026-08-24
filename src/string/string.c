@@ -200,6 +200,6 @@ StringView strv_slice(const StringView strv, const size_t begin, const size_t le
 }
 
 void fprintstrv(FILE *stream, const StringView strv) {
-    assert(strv.impl_len <= INT_MAX);
+    assert(strv.impl_len <= INT_MAX); // although if you want to print a string with 2 billion characters, you probably got some bigger problems
     fprintf(stream, "%.*s", strv.impl_len, (char *) strv.impl_ptr);
 }
