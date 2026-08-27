@@ -150,7 +150,7 @@ void free_node(const ASTNode node) {
 void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node) {
     if (*has_node) {
         *has_node = false;
-        block_push(root, node);
+        astblock_push(root, node);
     }
 }
 
@@ -213,7 +213,7 @@ ASTNode parse_number(const Token token) {
 }
 
 ASTBlock parse_tokens(const TokensSlice tokens, size_t *i) {
-    ASTBlock root = alloc_block();
+    ASTBlock root = alloc_astblock();
 
     ASTNode node;
     bool has_node = false;
