@@ -62,7 +62,7 @@ enum ASTNodeType {
 
 typedef struct ASTNode ASTNode;
 
-DECLARE_SEQ(Block, block, ASTNode)
+DECLARE_SEQ(ASTBlock, block, ASTNode)
 
 struct ASTNode {
     size_t src_idx;
@@ -73,11 +73,11 @@ struct ASTNode {
         StringView as_word;
         int64_t as_integer;
         double as_double;
-        Block as_block;
+        ASTBlock as_block;
     };
 };
 
-void free_block(Block block);
+void free_block(ASTBlock block);
 
 void free_node(ASTNode node);
 
@@ -86,14 +86,14 @@ typedef struct {
     size_t len;
 } TokensSlice;
 
-void emit_node(Block *root, const ASTNode *node, bool *has_node);
+void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node);
 
 ASTNode parse_number(Token token);
 
-Block parse_tokens(TokensSlice tokens, size_t *i);
+ASTBlock parse_tokens(TokensSlice tokens, size_t *i);
 
 void printatom(ASTNode node);
 
-void printast(Block root, size_t indent);
+void printast(ASTBlock root, size_t indent);
 
 #endif //OPERATIVE_PARSING_H

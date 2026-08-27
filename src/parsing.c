@@ -4,7 +4,7 @@
 #include "parsing.h"
 
 DEFINE_SEQ(Tokens, tokens, Token)
-DEFINE_SEQ(Block, block, ASTNode)
+DEFINE_SEQ(ASTBlock, block, ASTNode)
 
 void free_token(const Token token) {
 }
@@ -131,7 +131,7 @@ Tokens tokenize(const StringView src) {
     return tokens;
 }
 
-void free_block(const Block block) {
+void free_block(const ASTBlock block) {
     for (size_t i = 0; i < block.len; i++) {
         free_node(block.ptr[i]);
     }
@@ -147,7 +147,7 @@ void free_node(const ASTNode node) {
     }
 }
 
-void emit_node(Block *root, const ASTNode *node, bool *has_node) {
+void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node) {
     if (*has_node) {
         *has_node = false;
         block_push(root, node);
@@ -212,8 +212,8 @@ ASTNode parse_number(const Token token) {
     return result;
 }
 
-Block parse_tokens(const TokensSlice tokens, size_t *i) {
-    Block root = alloc_block();
+ASTBlock parse_tokens(const TokensSlice tokens, size_t *i) {
+    ASTBlock root = alloc_block();
 
     ASTNode node;
     bool has_node = false;
@@ -278,7 +278,7 @@ void printatom(const ASTNode node) {
     }
 }
 
-void printast(const Block root, const size_t indent) {
+void printast(const ASTBlock root, const size_t indent) {
     for (size_t i = 0; i < root.len; i++) {
         const ASTNode node = root.ptr[i];
 
