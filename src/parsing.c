@@ -4,7 +4,7 @@
 #include "parsing.h"
 
 DEFINE_SEQ(Tokens, tokens, Token)
-DEFINE_SEQ(ASTBlock, block, ASTNode)
+DEFINE_SEQ(ASTBlock, astblock, ASTNode)
 
 void free_token(const Token token) {
 }

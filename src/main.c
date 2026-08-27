@@ -8,7 +8,7 @@ int main(void) {
     const Tokens tokens = tokenize(sample_source);
 
     size_t parsing_index = 0;
-    const Block root = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, &parsing_index);
+    const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, &parsing_index);
 
     printast(root, 0);
 

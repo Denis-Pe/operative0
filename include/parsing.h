@@ -62,7 +62,7 @@ enum ASTNodeType {
 
 typedef struct ASTNode ASTNode;
 
-DECLARE_SEQ(ASTBlock, block, ASTNode)
+DECLARE_SEQ(ASTBlock, astblock, ASTNode)
 
 struct ASTNode {
     size_t src_idx;
