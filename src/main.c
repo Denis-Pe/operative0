@@ -126,7 +126,7 @@ Value eval_form(const ASTNode form) {
 }
 
 Value eval_ast(const ASTBlock root) {
-    Value result;
+    Value result; // TODO what should an empty block "return"?
 
     for (size_t i = 0; i < root.len; i++) {
         result = eval_form(root.ptr[i]);
