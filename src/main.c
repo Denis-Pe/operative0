@@ -34,14 +34,24 @@ struct Value {
 void printval(const Value v) {
     switch (v.type) {
         case TYPE_WORD:
-            fprintstrv(stdout, v.as_word);
-            printf("\n");
+            fprintstrv(stdout, v.as_word);;
             break;
         case TYPE_DOUBLE:
-            printf("%lf\n", v.as_double);
+            printf("%lf", v.as_double);
             break;
         case TYPE_INT:
             printf("%zu", v.as_integer);
+            break;
+        case TYPE_BLOCK:
+            printf("[");
+            if (v.as_block.len) {
+                printval(v.as_block.elements[0]);
+            }
+            for (size_t i = 1; i < v.as_block.len; i++) {
+                printf(" ");
+                printval(v.as_block.elements[i]);
+            }
+            printf("]");
             break;
         default:
             panic_switch();
