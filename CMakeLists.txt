@@ -15,6 +15,10 @@ add_executable(operative src/main.c
         include/string/pred.h
         src/parsing.c
         include/parsing.h
+        src/runtime/value.c
+        include/runtime/value.h
+        src/runtime/env.c
+        include/runtime/env.h
 )
 
 target_compile_options(operative PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)

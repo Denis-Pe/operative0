@@ -3,101 +3,14 @@
 #include "string/string.h"
 #include "parsing.h"
 #include "seq.h"
+#include "runtime/value.h"
+#include "runtime/env.h"
 
-typedef struct Value Value;
-
-typedef StringView Word;
-
-typedef struct {
-    Value *elements;
-    size_t len;
-} Block;
-
-enum ValueType {
-    TYPE_BLOCK,
-    TYPE_WORD,
-    TYPE_INT,
-    TYPE_DOUBLE
-};
-
-struct Value {
-    enum ValueType type;
-
-    union {
-        Word as_word;
-        int64_t as_integer;
-        double as_double;
-        Block as_block;
-    };
-};
-
-void printval(const Value v) {
-    switch (v.type) {
-        case TYPE_WORD:
-            fprintstrv(stdout, v.as_word);;
-            break;
-        case TYPE_DOUBLE:
-            printf("%lf", v.as_double);
-            break;
-        case TYPE_INT:
-            printf("%zu", v.as_integer);
-            break;
-        case TYPE_BLOCK:
-            printf("[");
-            if (v.as_block.len) {
-                printval(v.as_block.elements[0]);
-            }
-            for (size_t i = 1; i < v.as_block.len; i++) {
-                printf(" ");
-                printval(v.as_block.elements[i]);
-            }
-            printf("]");
-            break;
-        default:
-            panic_switch();
-    }
+Value identity(const Frame curr, const Block args) {
+    return args.elements[0];
 }
 
-typedef struct {
-    Word word;
-    Value value;
-} Binding;
-
-DECLARE_SEQ(ScopeBindings, bindings, Binding)
-
-DEFINE_SEQ(ScopeBindings, bindings, Binding)
-
-typedef struct Environment Environment;
-
-struct Environment {
-    Environment *parent;
-    ScopeBindings bindings;
-};
-
-Environment alloc_root_env(void) {
-    return (Environment){NULL, alloc_bindings()};
-}
-
-Environment alloc_subenv(Environment *parent) {
-    return (Environment){parent, alloc_bindings()};
-}
-
-void free_env(const Environment env) {
-    free(env.bindings.ptr);
-}
-
-typedef Value (*OperativeFun)(Environment curr, Block args);
-
-typedef struct {
-    OperativeFun fun;
-    size_t expected_args;
-} Operative;
-
-Value identity(const Environment curr, const Block args) {
-    return (Value){.type = TYPE_BLOCK, .as_block = args};
-}
-
-Value set_value(Environment curr, const Block args) {
+Value set_value(Frame curr, const Block args) {
     assert(args.elements[0].type == TYPE_WORD);
 
     const Binding b = (Binding){
