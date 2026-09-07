@@ -29,7 +29,7 @@ void printval(const Value v) {
             printf("]");
             break;
         case TYPE_OP:
-            printf("(OP %p)", (void *) v.as_op.fun);
+            printf("(OP %p)", (void *) v.as_op.as_builtin);
             break;
         default:
             panic_switch();

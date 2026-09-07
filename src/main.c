@@ -6,11 +6,11 @@
 #include "runtime/value.h"
 #include "runtime/env.h"
 
-Value identity(const Frame curr, const Block args) {
+Value identity(const Call curr, const Block args) {
     return args.elements[0];
 }
 
-Value set_value(Frame curr, const Block args) {
+Value set_value(Call curr, const Block args) {
     assert(args.elements[0].type == TYPE_WORD);
 
     const Binding b = (Binding){
@@ -51,8 +51,8 @@ Value eval_form(const ASTNode form) {
 Value eval_ast(const ASTBlock root) {
     Value result = (Value){.type = TYPE_INT, .as_integer = 0}; // TODO what should an empty block "return"?
 
-    for (size_t i = 0; i < root.len; i++) {
-        result = eval_form(root.ptr[i]);
+    for (size_t i = 0; i < root.seq.len; i++) {
+        result = eval_form(root.seq.ptr[i]);
     }
 
     return result;

@@ -4,6 +4,7 @@
 
 #ifndef OPERATIVE_VALUE_H
 #define OPERATIVE_VALUE_H
+#include "parsing.h"
 #include "string/string.h"
 
 typedef struct Value Value;
@@ -15,12 +16,17 @@ typedef struct {
     size_t len;
 } Block;
 
-struct Frame;
-typedef Value (*OperativeFun)(struct Frame curr, Block args);
+struct Call;
+
+typedef Value (*BuiltInOp)(struct Call curr);
 
 typedef struct {
-    OperativeFun fun;
     size_t expected_args;
+
+    union {
+        BuiltInOp as_builtin;
+        ASTBlock as_function;
+    };
 } Operative;
 
 enum ValueType {

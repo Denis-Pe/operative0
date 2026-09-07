@@ -18,18 +18,14 @@ typedef struct {
     ScopeBindings globals;
 } Environment;
 
-typedef struct Frame Frame;
+typedef struct Call Call;
 
-struct Frame {
-    Frame *parent;
+struct Call {
+    Operative op;
+    Block args;
+    Call *returningto;
     ScopeBindings bindings;
     Environment env;
 };
-
-Frame alloc_root_frame(void);
-
-Frame alloc_subenv(Frame *parent);
-
-void free_frame(Frame frame);
 
 #endif //OPERATIVE_ENV_H
