@@ -62,7 +62,12 @@ enum ASTNodeType {
 
 typedef struct ASTNode ASTNode;
 
-DECLARE_SEQ(ASTBlock, astblock, ASTNode)
+DECLARE_SEQ(ASTBlockSeq, astblock, ASTNode)
+
+typedef struct {
+    ASTBlockSeq seq;
+    size_t depth;
+} ASTBlock;
 
 struct ASTNode {
     size_t src_idx;
@@ -90,7 +95,7 @@ void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node);
 
 ASTNode parse_number(Token token);
 
-ASTBlock parse_tokens(TokensSlice tokens, size_t *i);
+ASTBlock parse_tokens(TokensSlice tokens);
 
 void printatom(ASTNode node);
 

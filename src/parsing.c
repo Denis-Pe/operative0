@@ -4,7 +4,7 @@
 #include "parsing.h"
 
 DEFINE_SEQ(Tokens, tokens, Token)
-DEFINE_SEQ(ASTBlock, astblock, ASTNode)
+DEFINE_SEQ(ASTBlockSeq, astblock, ASTNode)
 
 void free_token(const Token token) {
 }
@@ -132,10 +132,10 @@ Tokens tokenize(const StringView src) {
 }
 
 void free_block(const ASTBlock block) {
-    for (size_t i = 0; i < block.len; i++) {
-        free_node(block.ptr[i]);
+    for (size_t i = 0; i < block.seq.len; i++) {
+        free_node(block.seq.ptr[i]);
     }
-    free(block.ptr);
+    free(block.seq.ptr);
 }
 
 void free_node(const ASTNode node) {
@@ -150,7 +150,7 @@ void free_node(const ASTNode node) {
 void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node) {
     if (*has_node) {
         *has_node = false;
-        astblock_push(root, node);
+        astblock_push(&root->seq, node);
     }
 }
 
@@ -212,8 +212,8 @@ ASTNode parse_number(const Token token) {
     return result;
 }
 
-ASTBlock parse_tokens(const TokensSlice tokens, size_t *i) {
-    ASTBlock root = alloc_astblock();
+ASTBlock parse_tokens_helper(const TokensSlice tokens, size_t *i, const size_t depth) {
+    ASTBlock root = (ASTBlock){alloc_astblock(), depth};
 
     ASTNode node;
     bool has_node = false;
@@ -229,7 +229,7 @@ ASTBlock parse_tokens(const TokensSlice tokens, size_t *i) {
                 if (tok.as_bracket.bracket == '[') {
                     node.type = AST_BLOCK;
                     (*i)++;
-                    node.as_block = parse_tokens(tokens, i);
+                    node.as_block = parse_tokens_helper(tokens, i, depth + 1);
                     node.src_idx = tok.src_idx;
                     const Token closing_bracket = tokens.ptr[(*i) - 1];
                     node.src_len = closing_bracket.src_idx - node.src_idx + 2;
@@ -262,6 +262,11 @@ ASTBlock parse_tokens(const TokensSlice tokens, size_t *i) {
     return root;
 }
 
+ASTBlock parse_tokens(const TokensSlice tokens) {
+    size_t i = 0;
+    return parse_tokens_helper(tokens, &i, 0);
+}
+
 void printatom(const ASTNode node) {
     switch (node.type) {
         case AST_WORD:
@@ -279,8 +284,8 @@ void printatom(const ASTNode node) {
 }
 
 void printast(const ASTBlock root, const size_t indent) {
-    for (size_t i = 0; i < root.len; i++) {
-        const ASTNode node = root.ptr[i];
+    for (size_t i = 0; i < root.seq.len; i++) {
+        const ASTNode node = root.seq.ptr[i];
 
         for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) printf(" ");
 
