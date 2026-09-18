@@ -40,6 +40,7 @@ Value frozen(const ASTNode form) {
             break;
         case AST_BLOCK:
             result.type = TYPE_BLOCK;
+            // TODO leak ; maybe make a global map of frozen blocks with main()-level lifetime
             result.as_block = (Block){malloc(sizeof(Value) * form.as_block.seq.len), form.as_block.seq.len};
             for (size_t i = 0; i < form.as_block.seq.len; i++) {
                 result.as_block.elements[i] = frozen(form.as_block.seq.ptr[i]);
