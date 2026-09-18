@@ -22,6 +22,34 @@ Value set_value(Call curr, const Block args) {
     return (Value){.type = TYPE_INT, .as_integer = 0};
 }
 
+Value frozen(const ASTNode form) {
+    Value result;
+
+    switch (form.type) {
+        case AST_WORD:
+            result.type = TYPE_WORD;
+            result.as_word = form.as_word;
+            break;
+        case AST_DOUBLE:
+            result.type = TYPE_DOUBLE;
+            result.as_double = form.as_double;
+            break;
+        case AST_INTEGER:
+            result.type = TYPE_INT;
+            result.as_integer = form.as_integer;
+            break;
+        case AST_BLOCK:
+            result.type = TYPE_BLOCK;
+            result.as_block = (Block){malloc(sizeof(Value) * form.as_block.seq.len), form.as_block.seq.len};
+            for (size_t i = 0; i < form.as_block.seq.len; i++) {
+                result.as_block.elements[i] = frozen(form.as_block.seq.ptr[i]);
+            }
+            break;
+    }
+
+    return result;
+}
+
 Value eval_ast(ASTBlock root);
 
 Value eval_form(const ASTNode form) {
@@ -52,7 +80,7 @@ Value eval_ast(const ASTBlock root) {
     Value result = (Value){.type = TYPE_INT, .as_integer = 0}; // TODO what should an empty block "return"?
 
     for (size_t i = 0; i < root.seq.len; i++) {
-        result = eval_form(root.seq.ptr[i]);
+        result = frozen(root.seq.ptr[i]);
     }
 
     return result;
@@ -68,6 +96,7 @@ int main(void) {
     // printast(root, 0);
     const Value v = eval_ast(root);
     printval(v);
+    printf("\n");
 
     free_tokens(tokens);
     free_block(root);
