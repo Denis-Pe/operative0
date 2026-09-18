@@ -103,8 +103,8 @@ size_t str_len(const String *str) {
     return str->len;
 }
 
-int str_comprcstr(const String *str, const char *cstr) {
-    return strv_comprcstr(strv_fromstr(str), cstr);
+int str_cmpcstr(const String *str, const char *cstr) {
+    return strv_cmpcstr(strv_fromstr(str), cstr);
 }
 
 bool str_contains(const String *str, const uint32_t character) {
@@ -158,7 +158,7 @@ uint32_t strv_char_at(const StringView strv, const size_t index) {
     return strv.impl_ptr[index];
 }
 
-int strv_comprcstr(const StringView strv, const char *cstr) {
+int strv_cmpcstr(const StringView strv, const char *cstr) {
     assert(strv.impl_ptr != NULL);
     assert(cstr != NULL);
 
@@ -176,6 +176,29 @@ int strv_comprcstr(const StringView strv, const char *cstr) {
     if (i == strv.impl_len && cstr[i] != '\0') {
         return -1;
     } else if (i < strv.impl_len && cstr[i] == '\0') {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int strv_cmp(const StringView a, const StringView b) {
+    assert(a.impl_ptr != NULL);
+    assert(b.impl_ptr != NULL);
+
+    size_t i = 0;
+    for (; i < a.impl_len && i < b.impl_len; i++) {
+        assert(a.impl_ptr[i] <= 127);
+        assert(b.impl_ptr[i] <= 127);
+        const int diff = a.impl_ptr[i] - b.impl_ptr[i];
+        if (diff) {
+            return diff;
+        }
+    }
+
+    if (i == a.impl_len && i < b.impl_len) {
+        return -1;
+    } else if (i < a.impl_len && i == b.impl_len) {
         return 1;
     } else {
         return 0;
@@ -200,6 +223,7 @@ StringView strv_slice(const StringView strv, const size_t begin, const size_t le
 }
 
 void fprintstrv(FILE *stream, const StringView strv) {
-    assert(strv.impl_len <= INT_MAX); // although if you want to print a string with 2 billion characters, you probably got some bigger problems
+    assert(strv.impl_len <= INT_MAX);
+    // although if you want to print a string with 2 billion characters, you probably got some bigger problems
     fprintf(stream, "%.*s", strv.impl_len, (char *) strv.impl_ptr);
 }

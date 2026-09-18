@@ -86,9 +86,9 @@ Tokens tokenize(const StringView src) {
             tok.as_whitespace = strv_slice(src, slice_begin, i + 1 - slice_begin);
             tok.len++;
         } else if (c_isdigit(c)) {
-            if (has_token && tok.type == TOKEN_WORD && (strv_comprcstr(tok.as_word, "-") == 0
-                                                        || strv_comprcstr(tok.as_word, "-.") == 0
-                                                        || strv_comprcstr(tok.as_word, ".") == 0)) {
+            if (has_token && tok.type == TOKEN_WORD && (strv_cmpcstr(tok.as_word, "-") == 0
+                                                        || strv_cmpcstr(tok.as_word, "-.") == 0
+                                                        || strv_cmpcstr(tok.as_word, ".") == 0)) {
                 // type punning
                 tok.type = TOKEN_NUMBER;
             } else if (!has_token || tok.type != TOKEN_NUMBER) {

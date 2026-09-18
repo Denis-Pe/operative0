@@ -29,7 +29,7 @@ uint32_t str_char_at(const String *str, size_t index);
 
 size_t str_len(const String *str);
 
-int str_comprcstr(const String *str, const char *cstr);
+int str_cmpcstr(const String *str, const char *cstr);
 
 bool str_contains(const String *str, uint32_t character);
 
@@ -53,7 +53,9 @@ size_t strv_len(StringView strv);
 
 uint32_t strv_char_at(StringView strv, size_t index);
 
-int strv_comprcstr(StringView strv, const char *cstr);
+int strv_cmpcstr(StringView strv, const char *cstr);
+
+int strv_cmp(StringView a, StringView b);
 
 bool strv_contains(StringView strv, uint32_t character);
 
