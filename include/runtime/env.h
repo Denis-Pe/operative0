@@ -16,6 +16,7 @@ DECLARE_SEQ(ScopeBindings, bindings, Binding)
 
 typedef struct {
     ScopeBindings globals;
+    ScopeBindings locals;
 } Environment;
 
 typedef struct Call Call;
@@ -27,5 +28,12 @@ struct Call {
     ScopeBindings bindings;
     Environment env;
 };
+
+typedef struct {
+    bool isBound;
+    Value value;
+} LookupResult;
+
+LookupResult lookup(Environment, Word key);
 
 #endif //OPERATIVE_ENV_H
