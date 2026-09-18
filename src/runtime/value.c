@@ -34,7 +34,8 @@ void printval(const Value v) {
                     printf("(BUILTIN @ %p)", (void *) (uintptr_t) v.as_op.as_builtin);
                     break;
                 case OP_FUNCTION:
-                    printf("(FUN BLOCK @ %p)", (void *) &v.as_block);
+                    printf("(FUN BLOCK @ %p with length %zu)", (void *) v.as_op.as_function.seq.ptr,
+                           v.as_op.as_function.seq.len);
                     break;
                 default:
                     panic_switch();
