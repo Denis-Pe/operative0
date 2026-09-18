@@ -5,8 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdnoreturn.h>
 
-void panicf(const char *format, ...) {
+noreturn void panicf(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -14,12 +15,12 @@ void panicf(const char *format, ...) {
     abort();
 }
 
-void panic_errno(void) {
+noreturn void panic_errno(void) {
     fprintf(stderr, "Panic on Errno: %s\n", strerror(errno));
     abort();
 }
 
-void panic(void) {
+noreturn void panic(void) {
     fprintf(stderr, "Panic: Unrecoverable error\n");
     abort();
 }
