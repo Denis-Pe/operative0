@@ -15,7 +15,7 @@ void printval(const Value v) {
             printf("%lf", v.as_double);
             break;
         case TYPE_INT:
-            printf("%zu", v.as_integer);
+            printf("%ld", v.as_integer);
             break;
         case TYPE_BLOCK:
             printf("[");
