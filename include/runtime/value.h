@@ -20,7 +20,13 @@ struct Call;
 
 typedef Value (*BuiltInOp)(struct Call curr);
 
+enum OpType {
+    OP_BUILTIN,
+    OP_FUNCTION
+};
+
 typedef struct {
+    enum OpType type;
     size_t expected_args;
 
     union {

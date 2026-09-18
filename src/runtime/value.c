@@ -29,7 +29,16 @@ void printval(const Value v) {
             printf("]");
             break;
         case TYPE_OP:
-            printf("(OP %p)", (void *) v.as_op.as_builtin);
+            switch (v.type) {
+                case OP_BUILTIN:
+                    printf("(BUILTIN @ %p)", (void *) (uintptr_t) v.as_op.as_builtin);
+                    break;
+                case OP_FUNCTION:
+                    printf("(FUN BLOCK @ %p)", (void *) &v.as_block);
+                    break;
+                default:
+                    panic_switch();
+            }
             break;
         default:
             panic_switch();
