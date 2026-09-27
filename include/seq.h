@@ -19,7 +19,8 @@
 SeqType alloc_##fun_spec##_cap(const size_t cap);\
 SeqType alloc_##fun_spec(void);\
 void fun_spec##_push(SeqType *seq, const ElemType *elem);\
-void fun_spec##_pop(SeqType *seq);
+void fun_spec##_pop(SeqType *seq);\
+ElemType* fun_spec##_peek(SeqType *seq);
 
 #define DEFINE_SEQ(SeqType, fun_spec, ElemType)\
 SeqType alloc_##fun_spec##_cap(const size_t cap) {\
@@ -47,6 +48,12 @@ void fun_spec##_pop(SeqType *seq) {\
     } else {\
         panicf("Error: tried to pop empty sequence");\
     }\
+}\
+ElemType * fun_spec##_peek(SeqType *seq){\
+    if (seq->len > 0){\
+        return &seq->ptr[seq->len - 1];\
+    };\
+    return NULL;\
 }
 
 #endif //OPERATIVE_SEQ_H
