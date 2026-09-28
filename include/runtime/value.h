@@ -16,6 +16,10 @@ typedef struct {
     size_t len;
 } Block;
 
+Block alloc_block(size_t size);
+
+Block alloc_block_clean(size_t size);
+
 struct Call;
 
 typedef Value (*BuiltInOp)(struct Call curr);
