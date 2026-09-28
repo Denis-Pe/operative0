@@ -7,6 +7,8 @@
 #include "seq.h"
 
 DEFINE_SEQ(ScopeBindings, bindings, Binding)
+DEFINE_SEQ(FrameStack, fstack, Frame)
+DEFINE_SEQ(CallStack, cstack, Call)
 
 LookupResult lookup_bindings(const ScopeBindings bindings, const Word key) {
     for (size_t i = 0; i < bindings.len; i++) {
