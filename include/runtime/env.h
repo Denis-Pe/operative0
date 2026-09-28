@@ -16,8 +16,15 @@ DECLARE_SEQ(ScopeBindings, bindings, Binding)
 
 typedef struct {
     ScopeBindings globals;
-    ScopeBindings locals;
 } Environment;
+
+typedef struct {
+    Environment env;
+    ScopeBindings locals;
+    Operative* op;
+} Frame;
+
+DECLARE_SEQ(FrameStack, fstack, Frame)
 
 typedef struct Call Call;
 
@@ -25,9 +32,10 @@ struct Call {
     Operative op;
     Block args;
     Call *returningto;
-    ScopeBindings bindings;
-    Environment env;
+    Frame frame;
 };
+
+DECLARE_SEQ(CallStack, cstack, Call)
 
 typedef struct {
     bool isBound;
