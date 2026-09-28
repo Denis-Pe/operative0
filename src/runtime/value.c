@@ -4,7 +4,17 @@
 
 #include "runtime/value.h"
 
+#include <string.h>
+
 #include "error.h"
+
+Block alloc_block(const size_t size) {
+    return (Block){malloc(sizeof(Value) * size), size};
+}
+
+Block alloc_block_clean(const size_t size) {
+    return (Block){calloc(sizeof(Value), size), size};
+}
 
 void printval(const Value v) {
     switch (v.type) {
