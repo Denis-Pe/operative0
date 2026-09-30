@@ -14,14 +14,10 @@ typedef struct {
 
 DECLARE_SEQ(ScopeBindings, bindings, Binding)
 
-typedef struct {
-    ScopeBindings globals;
-} Environment;
-
-typedef struct {
-    Environment env;
-    ScopeBindings locals;
+typedef struct Frame {
+    ScopeBindings bindings;
     Operative* op;
+    struct Frame *parent;
 } Frame;
 
 DECLARE_SEQ(FrameStack, fstack, Frame)
@@ -38,10 +34,12 @@ struct Call {
 DECLARE_SEQ(CallStack, cstack, Call)
 
 typedef struct {
-    bool isBound;
+    bool is_bound;
     Value value;
 } LookupResult;
 
-LookupResult lookup(Environment, Word key);
+LookupResult lookup_bindings(ScopeBindings bindings, Word key);
+
+LookupResult lookup(Frame, Word key);
 
 #endif //OPERATIVE_ENV_H

@@ -21,11 +21,14 @@ LookupResult lookup_bindings(const ScopeBindings bindings, const Word key) {
     return (LookupResult){false};
 }
 
-LookupResult lookup(const Environment env, const Word key) {
-    const LookupResult lr = lookup_bindings(env.locals, key);
-    if (lr.isBound) {
-        return lr;
-    } else {
-        return lookup_bindings(env.globals, key);
+LookupResult lookup(const Frame frame, const Word key) {
+    const Frame *f = &frame;
+    while (f) {
+        const LookupResult lr = lookup_bindings(f->bindings, key);
+        if (lr.is_bound) {
+            return lr;
+        }
+        f = f->parent;
     }
+    return (LookupResult){false};
 }
