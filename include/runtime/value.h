@@ -44,7 +44,8 @@ enum ValueType {
     TYPE_WORD,
     TYPE_INT,
     TYPE_DOUBLE,
-    TYPE_OP
+    TYPE_OP,
+    TYPE_NIL
 };
 
 struct Value {
