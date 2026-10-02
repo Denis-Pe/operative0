@@ -14,10 +14,16 @@ typedef struct {
 
 DECLARE_SEQ(ScopeBindings, bindings, Binding)
 
+typedef struct {
+    bool is_there;
+    size_t value;
+} optsize;
+
 typedef struct Frame {
     ScopeBindings bindings;
-    Operative* op;
-    struct Frame *parent;
+    Operative *op;
+    optsize parent_idx;
+    size_t walk_idx;
 } Frame;
 
 DECLARE_SEQ(FrameStack, fstack, Frame)
@@ -27,8 +33,9 @@ typedef struct Call Call;
 struct Call {
     Operative op;
     Block args;
-    Call *returningto;
-    Frame frame;
+    size_t args_taken;
+    optsize returningtocall_idx;
+    size_t frame_idx;
 };
 
 DECLARE_SEQ(CallStack, cstack, Call)
