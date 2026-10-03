@@ -21,14 +21,14 @@ LookupResult lookup_bindings(const ScopeBindings bindings, const Word key) {
     return (LookupResult){false};
 }
 
-LookupResult lookup(const Frame frame, const Word key) {
-    const Frame *f = &frame;
+LookupResult lookup(const FrameStack fstack, const Frame startingfrom, const Word key) {
+    const Frame *f = &startingfrom;
     while (f) {
         const LookupResult lr = lookup_bindings(f->bindings, key);
         if (lr.is_bound) {
             return lr;
         }
-        f = f->parent;
+        f = f->parent_idx.is_there ? fstack.ptr + f->parent_idx.value : NULL;
     }
     return (LookupResult){false};
 }

@@ -31,7 +31,7 @@ DECLARE_SEQ(FrameStack, fstack, Frame)
 typedef struct Call Call;
 
 struct Call {
-    Operative op;
+    Operative *op;
     Block args;
     size_t args_taken;
     optsize returningtocall_idx;
@@ -47,6 +47,6 @@ typedef struct {
 
 LookupResult lookup_bindings(ScopeBindings bindings, Word key);
 
-LookupResult lookup(Frame, Word key);
+LookupResult lookup(FrameStack, Frame startingfrom, Word key);
 
 #endif //OPERATIVE_ENV_H
