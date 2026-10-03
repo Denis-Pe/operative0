@@ -17,12 +17,12 @@ DECLARE_SEQ(ScopeBindings, bindings, Binding)
 typedef struct {
     bool is_there;
     size_t value;
-} optsize;
+} OptSize;
 
 typedef struct Frame {
     ScopeBindings bindings;
     Operative *op;
-    optsize parent_idx;
+    OptSize parent_idx;
     size_t walk_idx;
 } Frame;
 
@@ -34,7 +34,7 @@ struct Call {
     Operative *op;
     Block args;
     size_t args_taken;
-    optsize returningtocall_idx;
+    OptSize returningtocall_idx;
     size_t frame_idx;
 };
 
