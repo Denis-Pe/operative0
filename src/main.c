@@ -6,20 +6,20 @@
 #include "runtime/value.h"
 #include "runtime/env.h"
 
-Value identity(const Call curr, const Block args) {
-    return args.elements[0];
+Value identity(Call curr) {
+    return curr.args.elements[0];
 }
 
 Value set_value(Call curr, const Block args) {
-    assert(args.elements[0].type == TYPE_WORD);
+    // assert(args.elements[0].type == TYPE_WORD);
+    //
+    // const Binding b = (Binding){
+    //     .word = args.elements[0].as_word,
+    //     .value = args.elements[1]
+    // };
+    // bindings_push(&curr.frame.bindings, &b);
 
-    const Binding b = (Binding){
-        .word = args.elements[0].as_word,
-        .value = args.elements[1]
-    };
-    bindings_push(&curr.bindings, &b);
-
-    return (Value){.type = TYPE_INT, .as_integer = 0};
+    return (Value){.type = TYPE_NIL};
 }
 
 Value frozen(const ASTNode form) {
@@ -52,15 +52,22 @@ Value frozen(const ASTNode form) {
     return result;
 }
 
-Value eval_ast(ASTBlock root);
+Value eval_ast(ASTBlock, ScopeBindings builtins);
 
-Value eval_form(const ASTNode form) {
+Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
     Value result;
+    LookupResult lr;
 
     switch (form.type) {
         case AST_WORD:
-            result.type = TYPE_WORD;
-            result.as_word = form.as_word;
+            lr = lookup(fstack, frame, form.as_word);
+            if (lr.is_bound) {
+                result = lr.value;
+            } else {
+                fprintf(stderr, "Error: evaluated word `");
+                fprintstrv(stderr, form.as_word);
+                panicf("` is unbound.");
+            }
             break;
         case AST_DOUBLE:
             result.type = TYPE_DOUBLE;
@@ -71,32 +78,133 @@ Value eval_form(const ASTNode form) {
             result.as_integer = form.as_integer;
             break;
         case AST_BLOCK:
-            result = eval_ast(form.as_block);
+            result = frozen(form);
             break;
+        default:
+            panic_switch();
     }
 
     return result;
 }
 
-Value eval_ast(const ASTBlock root) {
-    Value result = (Value){.type = TYPE_INT, .as_integer = 0}; // TODO what should an empty block "return"?
+// void do_call(Call c) {
+//     switch (c.op.type) {
+//         case OP_BUILTIN:
+//             c.op.as_builtin(c);
+//             break;
+//         case OP_FUNCTION:
+//
+//
+//
+//     }
+// }
 
-    for (size_t i = 0; i < root.seq.len; i++) {
-        result = frozen(root.seq.ptr[i]);
+Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
+    Value result = (Value){.type = TYPE_NIL};
+    FrameStack fstack = alloc_fstack();
+    CallStack cstack = alloc_cstack();
+    Operative root_op = (Operative){
+        .type = OP_FUNCTION,
+        .expected_args = 0,
+        .as_function = root
+    };
+    Frame root_frame = (Frame){
+        .bindings = builtins,
+        .op = root_op,
+        .parent_idx = (OptSize){false},
+        .walk_idx = 0
+    };
+    /**** both used in the switch below */
+    Frame new_frame;
+    Operative op;
+    /****/
+    Frame *f = &root_frame;
+    fstack_push(&fstack, f);
+
+    while (f) {
+        Call *c = cstack_peek(&cstack);
+
+        ASTBlock tree = f->op.as_function; // builtins executed instantly below
+        size_t i = f->walk_idx++;
+        if (tree.seq.len == i) {
+            free(f->bindings.ptr);
+            fstack_pop(&fstack);
+            f = fstack_peek(&fstack);
+            continue;
+        }
+        result = eval_form(tree.seq.ptr[i], fstack, f);
+        switch (result.type) {
+            case TYPE_OP:
+                op = result.as_op;
+                Call newc = (Call){
+                    op,
+                    alloc_block(op.expected_args),
+                    0,
+                    cstack.len > 0 ? (OptSize){true, cstack.len - 1} : (OptSize){false},
+                    fstack.len - 1,
+                };
+                cstack_push(&cstack, &newc);
+                break;
+            default:
+                if (c) {
+                    // if args_taken was already there, the call would've been executed below in the previous iteration
+                    c->args.elements[c->args_taken] = result;
+                }
+                break;
+        }
+
+        while (c && c->args_taken == c->args.len) {
+            op = c->op;
+            switch (op.type) {
+                case OP_BUILTIN:
+                    op.as_builtin(*c);
+                    break;
+                case OP_FUNCTION:
+                    new_frame = (Frame){
+                        .bindings = alloc_bindings(),
+                        .op = op,
+                        .parent_idx = (OptSize){true, 0},
+                        /* TODO the parent would be set at the point of its definition, i.e. in the builtin
+                             so a function defined in a frame would have its parent set to the active frame */
+                        .walk_idx = 0
+                    };
+                    fstack_push(&fstack, &new_frame);
+                    break;
+                default:
+                    panic_switch();
+            }
+            cstack_pop(&cstack);
+            c = cstack_peek(&cstack);
+        }
+
+        f = fstack_peek(&fstack);
     }
 
     return result;
+}
+
+void def(ScopeBindings *bindings, const char *name, const size_t args, const BuiltInOp op) {
+    bind(bindings, strv_fromcstr(name), (Value){
+             .type = TYPE_OP, .as_op = (Operative){.type = OP_BUILTIN, .expected_args = args, .as_builtin = op}
+         });
+}
+
+ScopeBindings default_builtins(void) {
+    ScopeBindings bindings = alloc_bindings();
+    def(&bindings, "identity", 1, identity);
+    return bindings;
 }
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "              -1 2 3 -4009000000000000 5 6 [ -.7 8 -9 123456.7890123456 [ -0000001.000001 ]   le.wo-rd  -00000327156028 --- - 2 ]     ");
+        "         identity 123 ");
 
     const Tokens tokens = tokenize(sample_source);
     const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});
 
     // printast(root, 0);
-    const Value v = eval_ast(root);
+    const ScopeBindings builtins = default_builtins();
+    const Value v = eval_ast(root, builtins);
     printval(v);
     printf("\n");
 

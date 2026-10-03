@@ -21,7 +21,7 @@ typedef struct {
 
 typedef struct Frame {
     ScopeBindings bindings;
-    Operative *op;
+    Operative op;
     OptSize parent_idx;
     size_t walk_idx;
 } Frame;
@@ -31,7 +31,7 @@ DECLARE_SEQ(FrameStack, fstack, Frame)
 typedef struct Call Call;
 
 struct Call {
-    Operative *op;
+    Operative op;
     Block args;
     size_t args_taken;
     OptSize returningtocall_idx;
