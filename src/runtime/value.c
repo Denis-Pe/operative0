@@ -13,7 +13,11 @@ Block alloc_block(const size_t size) {
 }
 
 Block alloc_block_clean(const size_t size) {
-    return (Block){calloc(sizeof(Value), size), size};
+    const Block b = alloc_block(size);
+    for (size_t i = 0; i < size; i++) {
+        b.elements[i] = (Value){.type = TYPE_NIL};
+    }
+    return b;
 }
 
 void printval(const Value v) {
