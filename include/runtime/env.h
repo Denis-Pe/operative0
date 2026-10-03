@@ -45,8 +45,10 @@ typedef struct {
     Value value;
 } LookupResult;
 
-LookupResult lookup_bindings(ScopeBindings bindings, Word key);
+LookupResult lookup_bindings(ScopeBindings, Word key);
 
-LookupResult lookup(FrameStack, Frame startingfrom, Word key);
+LookupResult lookup(FrameStack, const Frame *startingfrom, Word key);
+
+void bind(ScopeBindings *, Word key, Value);
 
 #endif //OPERATIVE_ENV_H
