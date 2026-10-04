@@ -126,6 +126,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
 
         ASTBlock tree = f->op.as_function; // builtins executed instantly below
         size_t i = f->walk_idx++;
+        // TODO check for unfulfilled call, do [ add 1 ] should be invalid if add's arity is 2
         if (tree.seq.len == i) {
             free(f->bindings.ptr);
             fstack_pop(&fstack);
@@ -153,11 +154,12 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                 break;
         }
 
+        // TODO returning from user-defined functions
         while (c && c->args_taken == c->args.len) {
             op = c->op;
             switch (op.type) {
                 case OP_BUILTIN:
-                    op.as_builtin(*c);
+                    result = op.as_builtin(*c);
                     break;
                 case OP_FUNCTION:
                     new_frame = (Frame){
@@ -175,6 +177,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             }
             cstack_pop(&cstack);
             c = cstack_peek(&cstack);
+            if (c) c->args.elements[c->args_taken++] = result;
         }
 
         f = fstack_peek(&fstack);
@@ -197,7 +200,7 @@ ScopeBindings default_builtins(void) {
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "         identity 123 ");
+        "         identity [ 1 2.3 a-word ] ");
 
     const Tokens tokens = tokenize(sample_source);
     const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});
