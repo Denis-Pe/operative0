@@ -7,6 +7,7 @@
 #include "runtime/env.h"
 
 Value identity(Call curr) {
+    printf("Identity executed\n");
     return curr.args.elements[0];
 }
 
@@ -118,8 +119,8 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     Frame new_frame;
     Operative op;
     /****/
-    Frame *f = &root_frame;
-    fstack_push(&fstack, f);
+    fstack_push(&fstack, &root_frame);
+    Frame *f = fstack_peek(&fstack);
 
     while (f) {
         Call *c = cstack_peek(&cstack);
@@ -127,7 +128,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
         ASTBlock tree = f->op.as_function; // builtins executed instantly below
         size_t i = f->walk_idx++;
         // TODO check for unfulfilled call, do [ add 1 ] should be invalid if add's arity is 2
-        if (tree.seq.len == i) {
+        if (i == tree.seq.len) {
             free(f->bindings.ptr);
             fstack_pop(&fstack);
             f = fstack_peek(&fstack);
@@ -145,11 +146,12 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                     fstack.len - 1,
                 };
                 cstack_push(&cstack, &newc);
+                c = cstack_peek(&cstack);
                 break;
             default:
                 if (c) {
                     // if args_taken was already there, the call would've been executed below in the previous iteration
-                    c->args.elements[c->args_taken] = result;
+                    c->args.elements[c->args_taken++] = result;
                 }
                 break;
         }
@@ -177,7 +179,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             }
             cstack_pop(&cstack);
             c = cstack_peek(&cstack);
-            if (c) c->args.elements[c->args_taken++] = result;
+            if (c) c->args.elements[c->args_taken++] = result; // TODO this is actually invalid on case OP_FUNCTION
         }
 
         f = fstack_peek(&fstack);
