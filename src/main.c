@@ -103,7 +103,6 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
 Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     Value result = (Value){.type = TYPE_NIL};
     FrameStack fstack = alloc_fstack();
-    CallStack cstack = alloc_cstack();
     Operative root_op = (Operative){
         .type = OP_FUNCTION,
         .expected_args = 0,
@@ -111,6 +110,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     };
     Frame root_frame = (Frame){
         .bindings = builtins,
+        .cstack = alloc_cstack(),
         .op = root_op,
         .parent_idx = (OptSize){false},
         .walk_idx = 0
@@ -123,13 +123,15 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     Frame *f = fstack_peek(&fstack);
 
     while (f) {
-        Call *c = cstack_peek(&cstack);
+        CallStack *cstack = &f->cstack;
+        Call *c = cstack_peek(cstack);
 
         ASTBlock tree = f->op.as_function; // builtins executed instantly below
         size_t i = f->walk_idx++;
         // TODO check for unfulfilled call, do [ add 1 ] should be invalid if add's arity is 2
         if (i == tree.seq.len) {
             free(f->bindings.ptr);
+            free(cstack->ptr);
             fstack_pop(&fstack);
             f = fstack_peek(&fstack);
             continue;
@@ -142,11 +144,10 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                     op,
                     alloc_block(op.expected_args),
                     0,
-                    cstack.len > 0 ? (OptSize){true, cstack.len - 1} : (OptSize){false},
-                    fstack.len - 1,
+                    cstack->len > 0 ? (OptSize){true, cstack->len - 1} : (OptSize){false},
                 };
-                cstack_push(&cstack, &newc);
-                c = cstack_peek(&cstack);
+                cstack_push(cstack, &newc);
+                c = cstack_peek(cstack);
                 break;
             default:
                 if (c) {
@@ -178,8 +179,8 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                     panic_switch();
             }
             free(c->args.elements);
-            cstack_pop(&cstack);
-            c = cstack_peek(&cstack);
+            cstack_pop(cstack);
+            c = cstack_peek(cstack);
             if (c) c->args.elements[c->args_taken++] = result; // TODO this is actually invalid on case OP_FUNCTION
         }
 
@@ -187,7 +188,6 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     }
 
     free(fstack.ptr);
-    free(cstack.ptr);
 
     return result;
 }

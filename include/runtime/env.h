@@ -19,15 +19,6 @@ typedef struct {
     size_t value;
 } OptSize;
 
-typedef struct Frame {
-    ScopeBindings bindings;
-    Operative op;
-    OptSize parent_idx;
-    size_t walk_idx;
-} Frame;
-
-DECLARE_SEQ(FrameStack, fstack, Frame)
-
 typedef struct Call Call;
 
 struct Call {
@@ -35,10 +26,19 @@ struct Call {
     Block args;
     size_t args_taken;
     OptSize returningtocall_idx;
-    size_t frame_idx;
 };
 
 DECLARE_SEQ(CallStack, cstack, Call)
+
+typedef struct Frame {
+    ScopeBindings bindings;
+    CallStack cstack;
+    Operative op;
+    OptSize parent_idx;
+    size_t walk_idx;
+} Frame;
+
+DECLARE_SEQ(FrameStack, fstack, Frame)
 
 typedef struct {
     bool is_bound;
