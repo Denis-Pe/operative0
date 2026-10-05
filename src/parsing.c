@@ -267,38 +267,38 @@ ASTBlock parse_tokens(const TokensSlice tokens) {
     return parse_tokens_helper(tokens, &i, 0);
 }
 
-void printatom(const ASTNode node) {
+void fprintatom(FILE *stream, const ASTNode node) {
     switch (node.type) {
         case AST_WORD:
-            printf("Word: ");
-            fprintstrv(stdout, node.as_word);
+            fprintf(stream, "Word: ");
+            fprintstrv(stream, node.as_word);
             break;
         case AST_INTEGER:
-            printf("Integer: %ld", node.as_integer);
+            fprintf(stream, "Integer: %ld", node.as_integer);
             break;
         case AST_DOUBLE:
-            printf("Double: %lf", node.as_double);
+            fprintf(stream, "Double: %lf", node.as_double);
             break;
         default: ;
     }
 }
 
-void printast(const ASTBlock root, const size_t indent) {
+void fprintast(FILE *stream, const ASTBlock root, const size_t indent) {
     for (size_t i = 0; i < root.seq.len; i++) {
         const ASTNode node = root.seq.ptr[i];
 
         for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) printf(" ");
 
         if (node.type == AST_BLOCK) {
-            printf("Block: [\n");
-            printast(node.as_block, indent + 1);
+            fprintf(stream, "Block: [\n");
+            fprintast(stream, node.as_block, indent + 1);
             for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) printf(" ");
-            printf("]");
+            fprintf(stream, "]");
         } else {
-            printatom(node);
+            fprintatom(stream, node);
         }
-        printf("\n");
+        fprintf(stream, "\n");
 
-        fflush(stdout);
+        fflush(stream);
     }
 }

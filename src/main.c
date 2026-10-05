@@ -128,8 +128,14 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
 
         ASTBlock tree = f->op.as_function; // builtins executed instantly below
         size_t i = f->walk_idx++;
-        // TODO check for unfulfilled call, do [ add 1 ] should be invalid if add's arity is 2
         if (i == tree.seq.len) {
+            if (cstack->len != 0) {
+                fprintf(
+                    stderr, "Error: the following block's last operative has incomplete arity. Expected %zu, got %zu\n",
+                    c->args.len, c->args_taken);
+                fprintast(stderr, tree, 0);
+                panicf("");
+            }
             free(f->bindings.ptr);
             free(cstack->ptr);
             fstack_pop(&fstack);
@@ -206,7 +212,7 @@ ScopeBindings default_builtins(void) {
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "         identity [ 1 2.3 a-word ] ");
+        "         identity identity identity identity ");
 
     const Tokens tokens = tokenize(sample_source);
     const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});

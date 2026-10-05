@@ -97,8 +97,8 @@ ASTNode parse_number(Token token);
 
 ASTBlock parse_tokens(TokensSlice tokens);
 
-void printatom(ASTNode node);
+void fprintatom(FILE *stream, ASTNode node);
 
-void printast(ASTBlock root, size_t indent);
+void fprintast(FILE *stream, ASTBlock root, size_t indent);
 
 #endif //OPERATIVE_PARSING_H
