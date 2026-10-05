@@ -177,6 +177,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                 default:
                     panic_switch();
             }
+            free(c->args.elements);
             cstack_pop(&cstack);
             c = cstack_peek(&cstack);
             if (c) c->args.elements[c->args_taken++] = result; // TODO this is actually invalid on case OP_FUNCTION
@@ -184,6 +185,9 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
 
         f = fstack_peek(&fstack);
     }
+
+    free(fstack.ptr);
+    free(cstack.ptr);
 
     return result;
 }
