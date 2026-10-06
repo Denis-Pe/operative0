@@ -114,10 +114,8 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
         .parent_idx = (OptSize){false},
         .walk_idx = 0
     };
-    /**** both used in the switch below */
     Frame new_frame;
     Operative op;
-    /****/
     fstack_push(&fstack, &root_frame);
     Frame *f = fstack_peek(&fstack);
 
@@ -130,7 +128,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
         if (i == tree.seq.len) {
             if (cstack->len != 0) {
                 fprintf(
-                    stderr, "Error: the following block's last operative has incomplete arity. Expected %zu, got %zu\n",
+                    stderr, "Error: the following block's last operative is incomplete. Expected %zu arguments, got %zu\n",
                     c->args.len, c->args_taken);
                 fprintast(stderr, tree, 0);
                 panicf("");
