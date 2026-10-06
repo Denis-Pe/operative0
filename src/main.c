@@ -7,7 +7,6 @@
 #include "runtime/env.h"
 
 Value identity(Call curr) {
-    printf("Identity executed\n");
     return curr.args.elements[0];
 }
 
@@ -150,7 +149,6 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                     op,
                     alloc_block(op.expected_args),
                     0,
-                    cstack->len > 0 ? (OptSize){true, cstack->len - 1} : (OptSize){false},
                 };
                 cstack_push(cstack, &newc);
                 c = cstack_peek(cstack);
@@ -212,7 +210,7 @@ ScopeBindings default_builtins(void) {
 
 int main(void) {
     const StringView sample_source = strv_fromcstr(
-        "         identity identity identity identity ");
+        "         identity identity identity identity 1 ");
 
     const Tokens tokens = tokenize(sample_source);
     const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});

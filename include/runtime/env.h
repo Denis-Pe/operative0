@@ -25,7 +25,6 @@ struct Call {
     Operative op;
     Block args;
     size_t args_taken;
-    OptSize returningtocall_idx;
 };
 
 DECLARE_SEQ(CallStack, cstack, Call)
