@@ -165,6 +165,10 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             switch (op.type) {
                 case OP_BUILTIN:
                     result = op.as_builtin(*c);
+                    free(c->args.elements);
+                    cstack_pop(cstack);
+                    c = cstack_peek(cstack);
+                    if (c) c->args.elements[c->args_taken++] = result;
                     break;
                 case OP_FUNCTION:
                     new_frame = (Frame){
@@ -176,14 +180,13 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                         .walk_idx = 0
                     };
                     fstack_push(&fstack, &new_frame);
+                    free(c->args.elements);
+                    cstack_pop(cstack);
+                    c = cstack_peek(cstack);
                     break;
                 default:
                     panic_switch();
             }
-            free(c->args.elements);
-            cstack_pop(cstack);
-            c = cstack_peek(cstack);
-            if (c) c->args.elements[c->args_taken++] = result; // TODO this is actually invalid on case OP_FUNCTION
         }
 
         f = fstack_peek(&fstack);
