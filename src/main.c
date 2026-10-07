@@ -138,6 +138,11 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             free(cstack->ptr);
             fstack_pop(&fstack);
             f = fstack_peek(&fstack);
+            if (f && ((c = cstack_peek(&f->cstack)))) {
+                // worth noting: I think even if functions have an empty call stack, and even if there are several of
+                // them nested, `result` is propagated up the chain of frames. Needs thorough testing
+                c->args.elements[c->args_taken++] = result;
+            }
             continue;
         }
         result = eval_form(tree.seq.ptr[i], fstack, f);
@@ -160,7 +165,6 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                 break;
         }
 
-        // TODO returning from user-defined functions
         while (c && c->args_taken == c->args.len) {
             op = c->op;
             switch (op.type) {
