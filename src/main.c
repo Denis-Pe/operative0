@@ -87,18 +87,6 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
     return result;
 }
 
-// void do_call(Call c) {
-//     switch (c.op.type) {
-//         case OP_BUILTIN:
-//             c.op.as_builtin(c);
-//             break;
-//         case OP_FUNCTION:
-//
-//
-//
-//     }
-// }
-
 Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
     Value result = (Value){.type = TYPE_NIL};
     FrameStack fstack = alloc_fstack();
