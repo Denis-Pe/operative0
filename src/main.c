@@ -3,6 +3,7 @@
 #include "string/string.h"
 #include "parsing.h"
 #include "seq.h"
+#include "surface.h"
 #include "runtime/value.h"
 #include "runtime/env.h"
 
@@ -202,11 +203,17 @@ ScopeBindings default_builtins(void) {
     return bindings;
 }
 
-int main(void) {
-    const StringView sample_source = strv_fromcstr(
-        "         identity identity identity identity 1 ");
+int main(const int argc, char *argv[]) {
+    StringView src;
+    String *file_content = NULL;
+    if (argc == 2) {
+        file_content = read_file(argv[1]);
+        src = strv_fromstr(file_content);
+    } else {
+        src = strv_fromcstr(" identity 2 ");
+    }
 
-    const Tokens tokens = tokenize(sample_source);
+    const Tokens tokens = tokenize(src);
     const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});
 
     // printast(root, 0);
@@ -217,6 +224,7 @@ int main(void) {
 
     free_tokens(tokens);
     free_block(root);
+    if (file_content) free_str(file_content);
 
     return 0;
 }

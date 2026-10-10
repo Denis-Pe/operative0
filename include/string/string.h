@@ -15,11 +15,16 @@ String *alloc_str_cap(size_t cap);
 
 String *alloc_str(void);
 
+void str_accomodate(String **string, size_t ideal_cap);
+
 void str_push(String **string, uint32_t character);
 
 void str_pushcstr(String **string, const char *cstr);
 
 void str_pushstr(String **string, const String *new_data);
+
+/// Starting from the current stream position
+void str_pushfile(String **string, FILE *, size_t bytes);
 
 String *alloc_str_fromcstr(const char *cstr);
 

@@ -19,6 +19,8 @@ add_executable(operative src/main.c
         include/runtime/value.h
         src/runtime/env.c
         include/runtime/env.h
+        src/surface.c
+        include/surface.h
 )
 
 target_compile_options(operative PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)

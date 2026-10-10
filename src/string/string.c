@@ -33,6 +33,17 @@ String *alloc_str(void) {
     return alloc_str_cap(DEFAULT_STRING_SIZE);
 }
 
+void str_accomodate(String **s, const size_t ideal_cap) {
+    assert(s != NULL);
+    assert(*s != NULL);
+    if ((*s)->cap < ideal_cap) {
+        String *new_ptr = realloc(*s, sizeof(String) + ideal_cap * sizeof(*(*s)->ptr));
+        if (new_ptr == NULL) panic_errno();
+        *s = new_ptr;
+        (*s)->cap = ideal_cap;
+    }
+}
+
 void str_push(String **string, const uint32_t character) {
     assert(string != NULL);
     assert(*string != NULL);
@@ -72,6 +83,13 @@ void str_pushstr(String **string, const String *new_data) {
         assert(c <= 127);
         str_push(string, c);
     }
+}
+
+void str_pushfile(String **string, FILE *f, const size_t bytes) {
+    str_accomodate(string, (*string)->len + bytes);
+    const size_t consumption = fread((*string)->ptr, 1, bytes, f);
+    (*string)->len += consumption;
+    assert(consumption == bytes);
 }
 
 String *alloc_str_fromcstr(const char *cstr) {
