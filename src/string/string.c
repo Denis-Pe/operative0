@@ -33,14 +33,14 @@ String *alloc_str(void) {
     return alloc_str_cap(DEFAULT_STRING_SIZE);
 }
 
-void str_accomodate(String **s, const size_t ideal_cap) {
-    assert(s != NULL);
-    assert(*s != NULL);
-    if ((*s)->cap < ideal_cap) {
-        String *new_ptr = realloc(*s, sizeof(String) + ideal_cap * sizeof(*(*s)->ptr));
+void str_accomodate(String **string, const size_t ideal_cap) {
+    assert(string != NULL);
+    assert(*string != NULL);
+    if ((*string)->cap < ideal_cap) {
+        String *new_ptr = realloc(*string, sizeof(String) + ideal_cap * sizeof(*(*string)->ptr));
         if (new_ptr == NULL) panic_errno();
-        *s = new_ptr;
-        (*s)->cap = ideal_cap;
+        *string = new_ptr;
+        (*string)->cap = ideal_cap;
     }
 }
 
