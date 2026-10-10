@@ -85,11 +85,23 @@ void str_pushstr(String **string, const String *new_data) {
     }
 }
 
-void str_pushfile(String **string, FILE *f, const size_t bytes) {
+bool str_pushfile(String **string, FILE *f, const size_t bytes) {
     str_accomodate(string, (*string)->len + bytes);
-    const size_t consumption = fread((*string)->ptr, 1, bytes, f);
+    size_t consumption = 0;
+    while (consumption < bytes) {
+        const size_t n = fread((*string)->ptr, 1, bytes - consumption, f);
+        consumption += n;
+        if (n == 0) {
+            if (ferror(f)) {
+                return false;
+            }
+            if (feof(f)) {
+                break;
+            }
+        }
+    }
     (*string)->len += consumption;
-    assert(consumption == bytes);
+    return true;
 }
 
 String *alloc_str_fromcstr(const char *cstr) {

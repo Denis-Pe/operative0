@@ -23,8 +23,8 @@ void str_pushcstr(String **string, const char *cstr);
 
 void str_pushstr(String **string, const String *new_data);
 
-/// Starting from the current stream position
-void str_pushfile(String **string, FILE *, size_t bytes);
+/// Starting from the current stream position, up to bytes or until EOF. Returns false on ferror
+bool str_pushfile(String **string, FILE *, size_t bytes);
 
 String *alloc_str_fromcstr(const char *cstr);
 
