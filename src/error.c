@@ -26,7 +26,7 @@ noreturn void panic(void) {
     abort();
 }
 
-void report_srcerr(const SourceError srce) {
+void underline_srce(const SourceError srce) {
     size_t line_idx = 0;
     size_t i = 0;
     const size_t srclen = strv_len(srce.source);
@@ -38,7 +38,7 @@ void report_srcerr(const SourceError srce) {
         }
         i++;
     }
-    const size_t start = srce.src_idx - line_idx - 1;
+    const size_t start = line_idx > 0 ? srce.src_idx - line_idx - 1 : srce.src_idx;
     i = 0;
     while (true) {
         const uint32_t c = strv_char_at(srce.source, line_idx + i);
@@ -46,7 +46,7 @@ void report_srcerr(const SourceError srce) {
         if (c == '\n') {
             break;
         }
-        if (line_idx + i + 1 == srclen) {
+        if (line_idx + i + 1 >= srclen) {
             fprintf(stderr, "\n");
             break;
         }

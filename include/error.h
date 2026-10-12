@@ -18,7 +18,7 @@ void panic_errno(void);
 void panic(void);
 
 /// Assuming the error is contained in a single line
-void report_srcerr(SourceError srce);
+void underline_srce(SourceError srce);
 
 #define panic_switch() panicf("Error: switch statement is inexhaustive in %s %d\n", __FILE__, __LINE__)
 
