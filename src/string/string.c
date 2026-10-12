@@ -257,3 +257,22 @@ void fprintstrv(FILE *stream, const StringView strv) {
     // although if you want to print a string with 2 billion characters, you probably got some bigger problems
     fprintf(stream, "%.*s", strv.impl_len, (char *) strv.impl_ptr);
 }
+
+void fprintstrvc(FILE *stream, const StringVChain strvc) {
+    for (size_t i = 0; i < MAX_STRCHAIN_SIZE; i++)
+        if (strvc.parts[i].impl_ptr)
+            fprintstrv(stream, strvc.parts[i]);
+}
+
+void fprintgstrv(FILE *stream, const GenericStringView gstrv) {
+    switch (gstrv.type) {
+        case GENERICSTRV_CHAIN:
+            fprintstrvc(stream, gstrv.as_chain);
+            break;
+        case GENERICSTRV_VIEW:
+            fprintstrv(stream, gstrv.as_view);
+            break;
+        default:
+            panic_switch();
+    }
+}

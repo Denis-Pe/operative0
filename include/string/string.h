@@ -9,6 +9,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define MAX_STRCHAIN_SIZE 10
+
+enum GenericSTRVType {
+    GENERICSTRV_VIEW,
+    GENERICSTRV_CHAIN,
+};
+
 typedef struct String String;
 
 /// Borrowed string, not null-terminated
@@ -18,6 +25,19 @@ typedef struct {
     /// Length of valid bytes in data. Direct use reserved for string/ files only
     size_t impl_len;
 } StringView;
+
+typedef struct {
+    StringView parts[MAX_STRCHAIN_SIZE];
+} StringVChain;
+
+typedef struct {
+    enum GenericSTRVType type;
+
+    union {
+        StringView as_view;
+        StringVChain as_chain;
+    };
+} GenericStringView;
 
 String *alloc_str_cap(size_t cap);
 
@@ -44,27 +64,31 @@ bool str_pushfile(String **string, FILE *, size_t bytes);
 
 uint32_t str_char_at(const String *str, size_t index);
 
+uint32_t strv_char_at(StringView strv, size_t index);
+
 size_t str_len(const String *str);
-
-int str_cmpcstr(const String *str, const char *cstr);
-
-bool str_contains(const String *str, uint32_t character);
-
-void fprintstr(FILE *stream, const String *str);
 
 size_t strv_len(StringView strv);
 
-uint32_t strv_char_at(StringView strv, size_t index);
+int str_cmpcstr(const String *str, const char *cstr);
 
 int strv_cmpcstr(StringView strv, const char *cstr);
 
 int strv_cmp(StringView a, StringView b);
 
+bool str_contains(const String *str, uint32_t character);
+
 bool strv_contains(StringView strv, uint32_t character);
 
 StringView strv_slice(StringView strv, size_t begin, size_t length);
 
+void fprintstr(FILE *stream, const String *str);
+
 void fprintstrv(FILE *stream, StringView strv);
+
+void fprintstrvc(FILE *stream, StringVChain strvc);
+
+void fprintgstrv(FILE *stream, GenericStringView gstrv);
 
 void free_str(String *s);
 
