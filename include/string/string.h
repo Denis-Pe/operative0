@@ -11,9 +11,25 @@
 
 typedef struct String String;
 
+/// Borrowed string, not null-terminated
+typedef struct {
+    /// Pointer to data. Direct use reserved for string/ files only
+    const uint8_t *impl_ptr;
+    /// Length of valid bytes in data. Direct use reserved for string/ files only
+    size_t impl_len;
+} StringView;
+
 String *alloc_str_cap(size_t cap);
 
 String *alloc_str(void);
+
+String *alloc_str_fromcstr(const char *cstr);
+
+String *alloc_str_clone(const String *from);
+
+StringView strv_fromcstr(const char *cstr);
+
+StringView strv_fromstr(const String *str);
 
 void str_accomodate(String **string, size_t ideal_cap);
 
@@ -26,10 +42,6 @@ void str_pushstr(String **string, const String *new_data);
 /// Starting from the current stream position, up to bytes or until EOF. Returns false on ferror
 bool str_pushfile(String **string, FILE *, size_t bytes);
 
-String *alloc_str_fromcstr(const char *cstr);
-
-String *alloc_str_clone(const String *from);
-
 uint32_t str_char_at(const String *str, size_t index);
 
 size_t str_len(const String *str);
@@ -39,20 +51,6 @@ int str_cmpcstr(const String *str, const char *cstr);
 bool str_contains(const String *str, uint32_t character);
 
 void fprintstr(FILE *stream, const String *str);
-
-void free_str(String *s);
-
-/// Borrowed string, not null-terminated
-typedef struct {
-    /// Pointer to data. Direct use reserved for string/ files only
-    const uint8_t *impl_ptr;
-    /// Length of valid bytes in data. Direct use reserved for string/ files only
-    size_t impl_len;
-} StringView;
-
-StringView strv_fromcstr(const char *cstr);
-
-StringView strv_fromstr(const String *str);
 
 size_t strv_len(StringView strv);
 
@@ -67,5 +65,7 @@ bool strv_contains(StringView strv, uint32_t character);
 StringView strv_slice(StringView strv, size_t begin, size_t length);
 
 void fprintstrv(FILE *stream, StringView strv);
+
+void free_str(String *s);
 
 #endif //OPERATIVE_STRING_H

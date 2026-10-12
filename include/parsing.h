@@ -21,6 +21,13 @@ enum TokenType {
     TOKEN_NUMBER
 };
 
+enum ASTNodeType {
+    AST_WORD,
+    AST_INTEGER,
+    AST_DOUBLE,
+    AST_BLOCK
+};
+
 typedef struct {
     size_t depth;
     char bracket;
@@ -39,26 +46,7 @@ typedef struct {
     };
 } Token;
 
-void free_token(Token token);
-
 DECLARE_SEQ(Tokens, tokens, Token)
-
-void free_tokens(Tokens tokens);
-
-bool is_valid_word_tok_first(uint32_t c);
-
-bool is_valid_word_tok_rest(uint32_t c);
-
-void emit_token(Tokens *tokens, const Token *tok, bool *has_token);
-
-Tokens tokenize(StringView src);
-
-enum ASTNodeType {
-    AST_WORD,
-    AST_INTEGER,
-    AST_DOUBLE,
-    AST_BLOCK
-};
 
 typedef struct ASTNode ASTNode;
 
@@ -82,14 +70,18 @@ struct ASTNode {
     };
 };
 
-void free_block(ASTBlock block);
-
-void free_node(ASTNode node);
-
 typedef struct {
     Token *ptr;
     size_t len;
 } TokensSlice;
+
+bool is_valid_word_tok_first(uint32_t c);
+
+bool is_valid_word_tok_rest(uint32_t c);
+
+void emit_token(Tokens *tokens, const Token *tok, bool *has_token);
+
+Tokens tokenize(StringView src);
 
 void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node);
 
@@ -100,5 +92,13 @@ ASTBlock parse_tokens(TokensSlice tokens);
 void fprintatom(FILE *stream, ASTNode node);
 
 void fprintast(FILE *stream, ASTBlock root, size_t indent);
+
+void free_token(Token token);
+
+void free_tokens(Tokens tokens);
+
+void free_block(ASTBlock block);
+
+void free_node(ASTNode node);
 
 #endif //OPERATIVE_PARSING_H
