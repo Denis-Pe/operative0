@@ -213,8 +213,18 @@ int main(const int argc, char *argv[]) {
         src = strv_fromcstr(" identity 2 ");
     }
 
-    const Tokens tokens = tokenize(src);
-    const ASTBlock root = parse_tokens((TokensSlice){tokens.ptr, tokens.len});
+    const TokensResult tokensres = tokenize(src);
+    if (!tokensres.isok) {
+        report_srce(tokensres.err);
+        return EXIT_FAILURE;
+    }
+    const Tokens tokens = tokensres.res;
+    const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
+    if (!rootres.isok) {
+        report_srce(rootres.err);
+        return EXIT_FAILURE;
+    }
+    const ASTBlock root = rootres.res;
 
     // printast(root, 0);
     const ScopeBindings builtins = default_builtins();

@@ -75,19 +75,37 @@ typedef struct {
     size_t len;
 } TokensSlice;
 
+typedef struct {
+    bool isok;
+    Tokens res;
+    SourceError err;
+} TokensResult;
+
+typedef struct {
+    bool isok;
+    ASTNode res;
+    SourceError err;
+} ASTNodeResult;
+
+typedef struct {
+    bool isok;
+    ASTBlock res;
+    SourceError err;
+} ASTBlockResult;
+
 bool is_valid_word_tok_first(uint32_t c);
 
 bool is_valid_word_tok_rest(uint32_t c);
 
 void emit_token(Tokens *tokens, const Token *tok, bool *has_token);
 
-Tokens tokenize(StringView src);
+TokensResult tokenize(StringView src);
 
 void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node);
 
-ASTNode parse_number(Token token);
+ASTNodeResult parse_number(Token token, StringView source);
 
-ASTBlock parse_tokens(TokensSlice tokens);
+ASTBlockResult parse_tokens(TokensSlice tokens, StringView source);
 
 void fprintatom(FILE *stream, ASTNode node);
 

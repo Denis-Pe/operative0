@@ -26,39 +26,41 @@ noreturn void panic(void) {
     abort();
 }
 
-void underline_srce(const SourceError srce) {
-    size_t line_idx = 0;
-    size_t i = 0;
-    const size_t srclen = strv_len(srce.source);
-    while (i < srclen) {
-        const uint32_t c = strv_char_at(srce.source, i);
-        if (c == '\n') line_idx = i + 1;
-        if (i >= srce.src_idx) {
-            break;
+void report_srce(const SourceError srce) {
+    if (srce.has_location) {
+        size_t line_idx = 0;
+        size_t i = 0;
+        const size_t srclen = strv_len(srce.source);
+        while (i < srclen) {
+            const uint32_t c = strv_char_at(srce.source, i);
+            if (c == '\n') line_idx = i + 1;
+            if (i >= srce.src_idx) {
+                break;
+            }
+            i++;
         }
-        i++;
-    }
-    const size_t start = line_idx > 0 ? srce.src_idx - line_idx - 1 : srce.src_idx;
-    i = 0;
-    while (true) {
-        const uint32_t c = strv_char_at(srce.source, line_idx + i);
-        fprintf(stderr, "%c", (char) c);
-        if (c == '\n') {
-            break;
+        const size_t start = line_idx > 0 ? srce.src_idx - line_idx - 1 : srce.src_idx;
+        i = 0;
+        while (true) {
+            const uint32_t c = strv_char_at(srce.source, line_idx + i);
+            fprintf(stderr, "%c", (char) c);
+            if (c == '\n') {
+                break;
+            }
+            if (line_idx + i + 1 >= srclen) {
+                fprintf(stderr, "\n");
+                break;
+            }
+            i++;
         }
-        if (line_idx + i + 1 >= srclen) {
-            fprintf(stderr, "\n");
-            break;
-        }
-        i++;
-    }
 
-    for (i = 0; i < start; i++) {
-        fprintf(stderr, " ");
+        for (i = 0; i < start; i++) {
+            fprintf(stderr, " ");
+        }
+        for (i = 0; i < srce.len; i++) {
+            fprintf(stderr, "^");
+        }
+        fprintf(stderr, "\n");
     }
-    for (i = 0; i < srce.len; i++) {
-        fprintf(stderr, "^");
-    }
-    fprintf(stderr, "\n");
-    fprintstrv(stderr, srce.message);
+    fprintgstrv(stderr, srce.message);
 }

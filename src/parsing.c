@@ -32,12 +32,12 @@ void emit_token(Tokens *tokens, const Token *tok, bool *has_token) {
     }
 }
 
-Tokens tokenize(const StringView src) {
+TokensResult tokenize(const StringView src) {
     Tokens tokens = alloc_tokens();
 
     const size_t src_len = strv_len(src);
     if (src_len == 0) {
-        return tokens;
+        return (TokensResult){.isok = true, .res = tokens};
     }
 
     uint32_t c;
@@ -60,7 +60,19 @@ Tokens tokenize(const StringView src) {
             tokens_push(&tokens, &tok);
         } else if (c == ']') {
             if (depth == 0) {
-                panicf("Source has unmatched brackets: extra closing bracket: index %zu\n", i);
+                free_tokens(tokens);
+                StringView errmsg = strv_fromcstr("Source has unmatched brackets: extra closing bracket");
+                return (TokensResult){
+                    .isok = false,
+                    .err = (SourceError){
+                        .has_location = true,
+                        .source = src, .src_idx = i, .len = 1,
+                        .message = (GenericStringView){
+                            .type = GENERICSTRV_VIEW,
+                            .as_view = errmsg
+                        }
+                    }
+                };
             }
 
             emit_token(&tokens, &tok, &has_token);
@@ -118,17 +130,42 @@ Tokens tokenize(const StringView src) {
             tok.len = 1;
             has_token = true;
         } else {
-            panicf("Parsing error: Unexpected character found: Code %u Glyph '%c'\n", c, (char) c);
+            StringVChain chain = {0};
+            chain.parts[0] = strv_fromcstr("Parsing error: Unexpected character found: ");
+            chain.parts[1] = strv_slice(src, i, 1);
+            free_tokens(tokens);
+            return (TokensResult){
+                .isok = false,
+                .err = (SourceError){
+                    .has_location = true,
+                    .source = src, .src_idx = i, .len = 1,
+                    .message = (GenericStringView){
+                        .type = GENERICSTRV_CHAIN,
+                        .as_chain = chain
+                    }
+                }
+            };
         }
     }
 
     if (depth != 0) {
-        panicf("Source has unmatched brackets: too many opening brackets\n");
+        free_tokens(tokens);
+        StringView errmsg = strv_fromcstr("Source has unmatched brackets: too many opening brackets");
+        return (TokensResult){
+            .isok = false,
+            .err = (SourceError){
+                .has_location = false,
+                .message = (GenericStringView){
+                    .type = GENERICSTRV_VIEW,
+                    .as_view = errmsg
+                }
+            }
+        };
     }
 
     emit_token(&tokens, &tok, &has_token);
 
-    return tokens;
+    return (TokensResult){.isok = true, .res = tokens};
 }
 
 void free_block(const ASTBlock block) {
@@ -154,8 +191,9 @@ void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node) {
     }
 }
 
-ASTNode parse_number(const Token token) {
+ASTNodeResult parse_number(const Token token, const StringView source) {
     ASTNode result;
+    StringVChain chain = {0};
     result.src_idx = token.src_idx;
     result.src_len = token.len;
     size_t i = 0;
@@ -192,29 +230,39 @@ ASTNode parse_number(const Token token) {
         int64_t a = 0;
         for (; i < len; i++) {
             c = strv_char_at(token.as_number, i);
+            const int64_t digit = (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0));
 
-            if (__builtin_mul_overflow(a, 10, &a)) {
-                fprintf(stderr, "Panic: Parsing error: number ");
-                fprintstrv(stderr, token.as_number);
-                fprintf(stderr, " is too large to fit in 64 bits.\n");
-                panicf("");
-            }
-            if (__builtin_add_overflow(a, (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0)), &a)) {
-                fprintf(stderr, "Panic: Parsing error: number ");
-                fprintstrv(stderr, token.as_number);
-                fprintf(stderr, " is too large to fit in 64 bits.\n");
-                panicf("");
-            }
+            if (__builtin_mul_overflow(a, 10, &a))
+                goto overflow;
+            if (__builtin_add_overflow(a, digit, &a))
+                goto overflow;
         }
         result.as_integer = a;
     }
 
-    return result;
+    return (ASTNodeResult){.isok = true, .res = result};
+
+overflow:
+    chain.parts[0] = strv_fromcstr("Parsing error: number ");
+    chain.parts[1] = token.as_number;
+    chain.parts[2] = strv_fromcstr(" is too large to fit in 64 bits.");
+    return (ASTNodeResult){
+        .isok = false,
+        .err = (SourceError){
+            .has_location = true,
+            .source = source,
+            .src_idx = token.src_idx,
+            .len = token.len,
+            .message = (GenericStringView){.type = GENERICSTRV_CHAIN, .as_chain = chain}
+        }
+    };
 }
 
-ASTBlock parse_tokens_helper(const TokensSlice tokens, size_t *i, const size_t depth) {
+ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const size_t depth, const StringView source) {
     ASTBlock root = (ASTBlock){alloc_astblock(), depth};
 
+    ASTBlockResult bres;
+    ASTNodeResult nres;
     ASTNode node;
     bool has_node = false;
     for (; *i < tokens.len; (*i)++) {
@@ -229,19 +277,24 @@ ASTBlock parse_tokens_helper(const TokensSlice tokens, size_t *i, const size_t d
                 if (tok.as_bracket.bracket == '[') {
                     node.type = AST_BLOCK;
                     (*i)++;
-                    node.as_block = parse_tokens_helper(tokens, i, depth + 1);
+                    bres = parse_tokens_helper(tokens, i, depth + 1, source);
+                    if (!bres.isok) return bres;
+                    node.as_block = bres.res;
                     node.src_idx = tok.src_idx;
                     const Token closing_bracket = tokens.ptr[(*i) - 1];
                     node.src_len = closing_bracket.src_idx - node.src_idx + 2;
                     has_node = true;
                 } else {
                     (*i)++;
-                    return root;
+                    return (ASTBlockResult){.isok = true, .res = root};
                 }
                 break;
             case TOKEN_NUMBER:
                 emit_node(&root, &node, &has_node);
-                node = parse_number(tok);
+                nres = parse_number(tok, source);
+                if (!nres.isok)
+                    return (ASTBlockResult){.isok = false, .err = nres.err};
+                node = nres.res;
                 has_node = true;
                 break;
             case TOKEN_WORD:
@@ -259,12 +312,12 @@ ASTBlock parse_tokens_helper(const TokensSlice tokens, size_t *i, const size_t d
 
     emit_node(&root, &node, &has_node);
 
-    return root;
+    return (ASTBlockResult){.isok = true, .res = root};
 }
 
-ASTBlock parse_tokens(const TokensSlice tokens) {
+ASTBlockResult parse_tokens(const TokensSlice tokens, const StringView source) {
     size_t i = 0;
-    return parse_tokens_helper(tokens, &i, 0);
+    return parse_tokens_helper(tokens, &i, 0, source);
 }
 
 void fprintatom(FILE *stream, const ASTNode node) {
