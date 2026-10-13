@@ -292,8 +292,10 @@ ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const si
             case TOKEN_NUMBER:
                 emit_node(&root, &node, &has_node);
                 nres = parse_number(tok, source);
-                if (!nres.isok)
+                if (!nres.isok) {
+                    free_block(root);
                     return (ASTBlockResult){.isok = false, .err = nres.err};
+                }
                 node = nres.res;
                 has_node = true;
                 break;

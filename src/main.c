@@ -221,6 +221,7 @@ int main(const int argc, char *argv[]) {
     const Tokens tokens = tokensres.res;
     const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
     if (!rootres.isok) {
+        free_tokens(tokens);
         report_srce(rootres.err);
         return EXIT_FAILURE;
     }
