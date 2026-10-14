@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdnoreturn.h>
 
 #include "string/string.h"
 #include "parsing.h"
@@ -236,16 +237,11 @@ ScopeBindings default_builtins(void) {
     return bindings;
 }
 
-int main(const int argc, char *argv[]) {
+int execute_file(const char *path) {
     StringView src;
     String *file_content = NULL;
-    if (argc == 2) {
-        file_content = read_file(argv[1]);
-        src = strv_fromstr(file_content);
-    } else {
-        src = strv_fromcstr(" identity palabra ");
-    }
-
+    file_content = read_file(path);
+    src = strv_fromstr(file_content);
     const TokensResult tokensres = tokenize(src);
     if (!tokensres.isok) {
         report_err(tokensres.err);
@@ -259,8 +255,6 @@ int main(const int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     const ASTBlock root = rootres.res;
-
-    // printast(root, 0);
     const ScopeBindings builtins = default_builtins();
     const EvalResult r = eval_ast(root, builtins);
     if (r.type == EVAL_ERR) {
@@ -277,5 +271,56 @@ int main(const int argc, char *argv[]) {
     free_block(root);
     if (file_content) free_str(file_content);
 
-    return 0;
+    return EXIT_SUCCESS;
+}
+
+noreturn void repl(void) {
+    printf("Operative v0\n");
+    while (true) {
+        printf("> ");
+        String *repl_input = alloc_str();
+        char c = (char) getc(stdin);
+        while (c != '\n') {
+            str_push(&repl_input, c);
+            c = (char) getc(stdin);
+        }
+
+        const StringView src = strv_fromstr(repl_input);
+        const TokensResult tokensres = tokenize(src);
+        if (!tokensres.isok) {
+            report_err(tokensres.err);
+            continue;
+        }
+        const Tokens tokens = tokensres.res;
+        const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
+        if (!rootres.isok) {
+            free_tokens(tokens);
+            report_err(rootres.err);
+            continue;
+        }
+        const ASTBlock root = rootres.res;
+        const ScopeBindings builtins = default_builtins();
+        const EvalResult r = eval_ast(root, builtins);
+        if (r.type == EVAL_ERR) {
+            free_tokens(tokens);
+            free_block(root);
+            report_err(r.as_err);
+            continue;
+        }
+        const Value v = r.as_val;
+        printval(v);
+        printf("\n");
+
+        free_tokens(tokens);
+        free_block(root);
+        if (repl_input) free_str(repl_input);
+    }
+}
+
+int main(const int argc, char *argv[]) {
+    if (argc == 2) {
+        return execute_file(argv[1]);
+    } else {
+        repl();
+    }
 }
