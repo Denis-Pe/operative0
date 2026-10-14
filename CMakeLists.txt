@@ -3,8 +3,6 @@ project(operative C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_compile_options(-Wall -Wextra -Wpedantic)
-
 add_executable(operative src/main.c
         include/seq.h
         include/error.h
@@ -21,17 +19,18 @@ add_executable(operative src/main.c
         include/runtime/env.h
         src/surface.c
         include/surface.h
+        src/miscutil.c
+        include/miscutil.h
 )
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(
-        operative PRIVATE
-        -fsanitize=address,undefined
-        -fno-omit-frame-pointer
+if(NOT MSVC)
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    target_compile_options(operative PRIVATE
+            $<$<CONFIG:Debug>:-fsanitize=address,undefined>
+            $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
     )
 
-    target_link_options(
-        operative PRIVATE
-        -fsanitize=address,undefined
+    target_link_options(operative PRIVATE
+            $<$<CONFIG:Debug>:-fsanitize=address,undefined>
     )
 endif()
 

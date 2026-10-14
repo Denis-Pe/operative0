@@ -2,6 +2,7 @@
 // Created by denis on 8/27/26.
 //
 #include "parsing.h"
+#include "miscutil.h"
 
 DEFINE_SEQ(Tokens, tokens, Token)
 DEFINE_SEQ(ASTBlockSeq, astblock, ASTNode)
@@ -272,9 +273,9 @@ ASTNodeResult parse_number(const Token token, const StringView source) {
             c = strv_char_at(token.as_number, i);
             const int64_t digit = (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0));
 
-            if (__builtin_mul_overflow(a, 10, &a))
+            if (mul_overflow_ll(a, 10, &a))
                 goto overflow;
-            if (__builtin_add_overflow(a, digit, &a))
+            if (add_overflow_ll(a, digit, &a))
                 goto overflow;
         }
         result.as_integer = a;
