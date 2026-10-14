@@ -84,6 +84,46 @@ TokensResult tokenize(const StringView src) {
             tok.as_bracket.bracket = ']';
             tok.as_bracket.depth = depth--;
             tokens_push(&tokens, &tok);
+        } else if (c == '\'') {
+            if (i + 1 == src_len) {
+                free_tokens(tokens);
+                return (TokensResult){
+                    .isok = false,
+                    .err = (SourceError){
+                        .has_location = true,
+                        .source = src,
+                        .src_idx = i,
+                        .len = 1,
+                        .message = (GenericStringView){
+                            .type = GENERICSTRV_VIEW, .as_view = strv_fromcstr("Syntax error: standalone quote")
+                        }
+                    }
+                };
+            }
+            if (!is_valid_word_tok_first(strv_char_at(src, i + 1))) {
+                free_tokens(tokens);
+                return (TokensResult){
+                    .isok = false,
+                    .err = (SourceError){
+                        .has_location = true,
+                        .source = src,
+                        .src_idx = i,
+                        .len = 2,
+                        .message = (GenericStringView){
+                            .type = GENERICSTRV_VIEW,
+                            .as_view = strv_fromcstr("Syntax error: quote must be followed by word")
+                        }
+                    }
+                };
+            }
+
+            emit_token(&tokens, &tok, &has_token);
+
+            tok.type = TOKEN_QUOTE;
+            tok.src_idx = i;
+            tok.len = 1;
+            tok.as_quote = '\'';
+            tokens_push(&tokens, &tok);
         } else if (c_iswhitespace(c)) {
             if (!has_token || tok.type != TOKEN_WHITESPACE) {
                 emit_token(&tokens, &tok, &has_token);
@@ -264,6 +304,7 @@ ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const si
     ASTBlockResult bres;
     ASTNodeResult nres;
     ASTNode node;
+    bool quoted = false;
     bool has_node = false;
     for (; *i < tokens.len; (*i)++) {
         const Token tok = tokens.ptr[*i];
@@ -304,8 +345,12 @@ ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const si
                 node.type = AST_WORD;
                 node.src_idx = tok.src_idx;
                 node.src_len = tok.len;
-                node.as_word = tok.as_word;
+                node.as_word = (ASTWord){.content = tok.as_word, .is_quoted = quoted};
+                quoted = false;
                 has_node = true;
+                break;
+            case TOKEN_QUOTE:
+                quoted = true;
                 break;
             default:
                 panic_switch();
@@ -326,7 +371,7 @@ void fprintatom(FILE *stream, const ASTNode node) {
     switch (node.type) {
         case AST_WORD:
             fprintf(stream, "Word: ");
-            fprintstrv(stream, node.as_word);
+            fprintstrv(stream, node.as_word.content);
             break;
         case AST_INTEGER:
             fprintf(stream, "Integer: %ld", node.as_integer);

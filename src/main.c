@@ -29,7 +29,7 @@ Value frozen(const ASTNode form) {
     switch (form.type) {
         case AST_WORD:
             result.type = TYPE_WORD;
-            result.as_word = form.as_word;
+            result.as_word = form.as_word.content;
             break;
         case AST_DOUBLE:
             result.type = TYPE_DOUBLE;
@@ -61,13 +61,18 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
 
     switch (form.type) {
         case AST_WORD:
-            lr = lookup(fstack, frame, form.as_word);
-            if (lr.is_bound) {
-                result = lr.value;
+            if (form.as_word.is_quoted) {
+                result.type = TYPE_WORD;
+                result.as_word = form.as_word.content;
             } else {
-                fprintf(stderr, "Error: evaluated word `");
-                fprintstrv(stderr, form.as_word);
-                panicf("` is unbound.");
+                lr = lookup(fstack, frame, form.as_word.content);
+                if (lr.is_bound) {
+                    result = lr.value;
+                } else {
+                    fprintf(stderr, "Error: evaluated word `");
+                    fprintstrv(stderr, form.as_word.content);
+                    panicf("` is unbound.");
+                }
             }
             break;
         case AST_DOUBLE:
@@ -210,7 +215,7 @@ int main(const int argc, char *argv[]) {
         file_content = read_file(argv[1]);
         src = strv_fromstr(file_content);
     } else {
-        src = strv_fromcstr(" identity 2 ");
+        src = strv_fromcstr(" identity 'and-documentation...NOW ");
     }
 
     const TokensResult tokensres = tokenize(src);

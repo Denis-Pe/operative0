@@ -15,6 +15,7 @@
 #define ASTPRINT_INDENT_WIDTH 4
 
 enum TokenType {
+    TOKEN_QUOTE,
     TOKEN_WORD,
     TOKEN_BRACKET,
     TOKEN_WHITESPACE,
@@ -39,6 +40,7 @@ typedef struct {
     size_t len;
 
     union {
+        char as_quote;
         StringView as_word;
         BracketToken as_bracket;
         StringView as_whitespace;
@@ -57,13 +59,18 @@ typedef struct {
     size_t depth;
 } ASTBlock;
 
+typedef struct {
+    StringView content;
+    bool is_quoted;
+} ASTWord;
+
 struct ASTNode {
     size_t src_idx;
     size_t src_len;
     enum ASTNodeType type;
 
     union {
-        StringView as_word;
+        ASTWord as_word;
         int64_t as_integer;
         double as_double;
         ASTBlock as_block;
