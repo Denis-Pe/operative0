@@ -268,10 +268,10 @@ ASTNodeResult parse_number(const Token token, const StringView source) {
         result.as_double = big + small;
     } else {
         result.type = AST_INTEGER;
-        int64_t a = 0;
+        long long a = 0;
         for (; i < len; i++) {
             c = strv_char_at(token.as_number, i);
-            const int64_t digit = (isneg ? (-1 * (int64_t) (c - ASCII_0)) : (int64_t) (c - ASCII_0));
+            const long long digit = (isneg ? (-1 * (long long) (c - ASCII_0)) : (long long) (c - ASCII_0));
 
             if (mul_overflow_ll(a, 10, &a))
                 goto overflow;
@@ -286,7 +286,7 @@ ASTNodeResult parse_number(const Token token, const StringView source) {
 overflow:
     chain.parts[0] = strv_fromcstr("Parsing error: number ");
     chain.parts[1] = token.as_number;
-    chain.parts[2] = strv_fromcstr(" is too large to fit in 64 bits.");
+    chain.parts[2] = strv_fromcstr(" is too large to fit in a long long.");
     return (ASTNodeResult){
         .isok = false,
         .err = (Error){

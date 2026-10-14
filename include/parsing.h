@@ -71,7 +71,7 @@ struct ASTNode {
 
     union {
         ASTWord as_word;
-        int64_t as_integer;
+        long long as_integer;
         double as_double;
         ASTBlock as_block;
     };
