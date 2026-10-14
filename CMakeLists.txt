@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 3.30)
 project(operative C)
 
 set(CMAKE_C_STANDARD 11)
@@ -22,8 +22,17 @@ add_executable(operative src/main.c
         src/surface.c
         include/surface.h
 )
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(
+        operative PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
 
-target_compile_options(operative PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-target_link_options(operative PRIVATE -fsanitize=address,undefined)
+    target_link_options(
+        operative PRIVATE
+        -fsanitize=address,undefined
+    )
+endif()
 
 target_include_directories(operative PRIVATE ${PROJECT_SOURCE_DIR}/include)
