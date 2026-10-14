@@ -274,15 +274,19 @@ int execute_file(const char *path) {
     return EXIT_SUCCESS;
 }
 
-noreturn void repl(void) {
+void repl(void) {
     printf("Operative v0\n");
     while (true) {
         printf("> ");
         String *repl_input = alloc_str();
         char c = (char) getc(stdin);
-        while (c != '\n') {
+        while (c != '\n' && !(ferror(stdin) || feof(stdin))) {
             str_push(&repl_input, c);
             c = (char) getc(stdin);
+        }
+        if (ferror(stdin)) {
+            if (errno == EINTR) return;
+            panicf("A fundamental error was encountered while reading stdin. Unable to reliably continue.");
         }
 
         const StringView src = strv_fromstr(repl_input);
@@ -314,13 +318,17 @@ noreturn void repl(void) {
         free_tokens(tokens);
         free_block(root);
         if (repl_input) free_str(repl_input);
+
+        if (feof(stdin)) {
+            return;
+        }
     }
 }
 
 int main(const int argc, char *argv[]) {
     if (argc == 2) {
         return execute_file(argv[1]);
-    } else {
-        repl();
     }
+    repl();
+    return EXIT_SUCCESS;
 }
