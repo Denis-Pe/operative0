@@ -27,6 +27,7 @@ noreturn void panic(void) {
 }
 
 void report_err(const Error err) {
+    printf("\n");
     if (err.location.len > 0) {
         size_t line_idx = 0;
         size_t i = 0;
