@@ -241,6 +241,9 @@ int execute_file(const char *path) {
     StringView src;
     String *file_content = NULL;
     file_content = read_file(path);
+    if (file_content == NULL) {
+        panicf("Unable to continue. Encountered error while reading file %s\n", path);
+    }
     src = strv_fromstr(file_content);
     const TokensResult tokensres = tokenize(src);
     if (!tokensres.isok) {
