@@ -53,6 +53,7 @@ void free_runtime(const FrameStack fstack) {
             const Call c = f.cstack.ptr[j];
             free(c.args.elements);
         }
+        free(f.bindings.ptr);
         free(f.cstack.ptr);
     }
     free(fstack.ptr);

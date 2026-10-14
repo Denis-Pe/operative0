@@ -243,7 +243,7 @@ int main(const int argc, char *argv[]) {
         file_content = read_file(argv[1]);
         src = strv_fromstr(file_content);
     } else {
-        src = strv_fromcstr(" identity 'and-documentation...NOW ");
+        src = strv_fromcstr(" identity palabra ");
     }
 
     const TokensResult tokensres = tokenize(src);
