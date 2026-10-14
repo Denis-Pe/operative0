@@ -52,10 +52,10 @@ void printval(const Value v) {
                            v.as_op.as_function.seq.len);
                     break;
                 default:
-                    panic_switch();
+                    exhaustive_switch();
             }
             break;
         default:
-            panic_switch();
+            exhaustive_switch();
     }
 }

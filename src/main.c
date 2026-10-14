@@ -87,7 +87,7 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
             result = frozen(form);
             break;
         default:
-            panic_switch();
+            exhaustive_switch();
     }
 
     return result;
@@ -184,7 +184,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
                     c = cstack_peek(cstack);
                     break;
                 default:
-                    panic_switch();
+                    exhaustive_switch();
             }
         }
 

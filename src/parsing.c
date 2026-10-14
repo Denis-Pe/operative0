@@ -353,7 +353,7 @@ ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const si
                 quoted = true;
                 break;
             default:
-                panic_switch();
+                exhaustive_switch();
         }
     }
 

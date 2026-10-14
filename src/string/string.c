@@ -273,6 +273,6 @@ void fprintgstrv(FILE *stream, const GenericStringView gstrv) {
             fprintstrv(stream, gstrv.as_view);
             break;
         default:
-            panic_switch();
+            exhaustive_switch();
     }
 }
