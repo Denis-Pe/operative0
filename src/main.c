@@ -279,7 +279,6 @@ int execute_file(const char *path) {
 
 void repl(void) {
     printf("Operative v0\n");
-    const ScopeBindings builtins = default_builtins();
     while (true) {
         printf("> ");
         String *repl_input = alloc_str();
@@ -307,6 +306,7 @@ void repl(void) {
             continue;
         }
         const ASTBlock root = rootres.res;
+        const ScopeBindings builtins = default_builtins();
         const EvalResult r = eval_ast(root, builtins);
         if (r.type == EVAL_ERR) {
             free_tokens(tokens);
