@@ -26,23 +26,23 @@ noreturn void panic(void) {
     abort();
 }
 
-void report_srce(const SourceError srce) {
-    if (srce.has_location) {
+void report_err(const Error err) {
+    if (err.location.len > 0) {
         size_t line_idx = 0;
         size_t i = 0;
-        const size_t srclen = strv_len(srce.source);
+        const size_t srclen = strv_len(err.location.source);
         while (i < srclen) {
-            const uint32_t c = strv_char_at(srce.source, i);
+            const uint32_t c = strv_char_at(err.location.source, i);
             if (c == '\n') line_idx = i + 1;
-            if (i >= srce.src_idx) {
+            if (i >= err.location.src_idx) {
                 break;
             }
             i++;
         }
-        const size_t start = line_idx > 0 ? srce.src_idx - line_idx - 1 : srce.src_idx;
+        const size_t start = line_idx > 0 ? err.location.src_idx - line_idx - 1 : err.location.src_idx;
         i = 0;
         while (true) {
-            const uint32_t c = strv_char_at(srce.source, line_idx + i);
+            const uint32_t c = strv_char_at(err.location.source, line_idx + i);
             fprintf(stderr, "%c", (char) c);
             if (c == '\n') {
                 break;
@@ -57,10 +57,10 @@ void report_srce(const SourceError srce) {
         for (i = 0; i < start; i++) {
             fprintf(stderr, " ");
         }
-        for (i = 0; i < srce.len; i++) {
+        for (i = 0; i < err.location.len; i++) {
             fprintf(stderr, "^");
         }
         fprintf(stderr, "\n");
     }
-    fprintgstrv(stderr, srce.message);
+    fprintgstrv(stderr, err.message);
 }

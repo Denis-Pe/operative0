@@ -7,6 +7,20 @@
 #include "runtime/value.h"
 #include "runtime/env.h"
 
+enum EvalResultType {
+    EVAL_VAL,
+    EVAL_ERR,
+};
+
+typedef struct {
+    enum EvalResultType type;
+
+    union {
+        Value as_val;
+        Error as_err;
+    };
+} EvalResult;
+
 Value identity(Call curr) {
     return curr.args.elements[0];
 }
@@ -53,9 +67,9 @@ Value frozen(const ASTNode form) {
     return result;
 }
 
-Value eval_ast(ASTBlock, ScopeBindings builtins);
+EvalResult eval_ast(ASTBlock, ScopeBindings builtins);
 
-Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
+EvalResult eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
     Value result;
     LookupResult lr;
 
@@ -69,9 +83,17 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
                 if (lr.is_bound) {
                     result = lr.value;
                 } else {
-                    fprintf(stderr, "Error: evaluated word `");
-                    fprintstrv(stderr, form.as_word.content);
-                    panicf("` is unbound.");
+                    StringVChain chain = {0};
+                    chain.parts[0] = strv_fromcstr("Error: evaluated word `");
+                    chain.parts[1] = form.as_word.content;
+                    chain.parts[2] = strv_fromcstr("` is unbound.");
+                    return (EvalResult){
+                        .type = EVAL_ERR,
+                        .as_err = (Error){
+                            .location = {0},
+                            .message = (GenericStringView){.type = GENERICSTRV_CHAIN, .as_chain = chain}
+                        }
+                    };
                 }
             }
             break;
@@ -90,11 +112,12 @@ Value eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
             exhaustive_switch();
     }
 
-    return result;
+    return (EvalResult){.type = EVAL_VAL, .as_val = result};
 }
 
-Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
-    Value result = (Value){.type = TYPE_NIL};
+EvalResult eval_ast(const ASTBlock root, ScopeBindings builtins) {
+    EvalResult result;
+    Value value = (Value){.type = TYPE_NIL};
     FrameStack fstack = alloc_fstack();
     Operative root_op = (Operative){
         .type = OP_FUNCTION,
@@ -134,15 +157,20 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             f = fstack_peek(&fstack);
             if (f && ((c = cstack_peek(&f->cstack)))) {
                 // worth noting: I think even if functions have an empty call stack, and even if there are several of
-                // them nested, `result` is propagated up the chain of frames. Needs thorough testing
-                c->args.elements[c->args_taken++] = result;
+                // them nested, `value` is propagated up the chain of frames. Needs thorough testing
+                c->args.elements[c->args_taken++] = value;
             }
             continue;
         }
         result = eval_form(tree.seq.ptr[i], fstack, f);
-        switch (result.type) {
+        if (result.type == EVAL_ERR) {
+            free_runtime(fstack);
+            return result;
+        }
+        value = result.as_val;
+        switch (value.type) {
             case TYPE_OP:
-                op = result.as_op;
+                op = value.as_op;
                 Call newc = (Call){
                     op,
                     alloc_block(op.expected_args),
@@ -154,7 +182,7 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             default:
                 if (c) {
                     // if args_taken was already there, the call would've been executed below in the previous iteration
-                    c->args.elements[c->args_taken++] = result;
+                    c->args.elements[c->args_taken++] = value;
                 }
                 break;
         }
@@ -163,11 +191,11 @@ Value eval_ast(const ASTBlock root, ScopeBindings builtins) {
             op = c->op;
             switch (op.type) {
                 case OP_BUILTIN:
-                    result = op.as_builtin(*c);
+                    value = op.as_builtin(*c);
                     free(c->args.elements);
                     cstack_pop(cstack);
                     c = cstack_peek(cstack);
-                    if (c) c->args.elements[c->args_taken++] = result;
+                    if (c) c->args.elements[c->args_taken++] = value;
                     break;
                 case OP_FUNCTION:
                     new_frame = (Frame){
@@ -220,21 +248,28 @@ int main(const int argc, char *argv[]) {
 
     const TokensResult tokensres = tokenize(src);
     if (!tokensres.isok) {
-        report_srce(tokensres.err);
+        report_err(tokensres.err);
         return EXIT_FAILURE;
     }
     const Tokens tokens = tokensres.res;
     const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
     if (!rootres.isok) {
         free_tokens(tokens);
-        report_srce(rootres.err);
+        report_err(rootres.err);
         return EXIT_FAILURE;
     }
     const ASTBlock root = rootres.res;
 
     // printast(root, 0);
     const ScopeBindings builtins = default_builtins();
-    const Value v = eval_ast(root, builtins);
+    const EvalResult r = eval_ast(root, builtins);
+    if (r.type == EVAL_ERR) {
+        free_tokens(tokens);
+        free_block(root);
+        report_err(r.as_err);
+        return EXIT_FAILURE;
+    }
+    const Value v = r.as_val;
     printval(v);
     printf("\n");
 

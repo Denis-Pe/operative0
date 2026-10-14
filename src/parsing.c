@@ -64,9 +64,8 @@ TokensResult tokenize(const StringView src) {
                 StringView errmsg = strv_fromcstr("Source has unmatched brackets: extra closing bracket");
                 return (TokensResult){
                     .isok = false,
-                    .err = (SourceError){
-                        .has_location = true,
-                        .source = src, .src_idx = i, .len = 1,
+                    .err = (Error){
+                        .location = (ErrorLocation){.source = src, .src_idx = i, .len = 1},
                         .message = (GenericStringView){
                             .type = GENERICSTRV_VIEW,
                             .as_view = errmsg
@@ -89,11 +88,12 @@ TokensResult tokenize(const StringView src) {
                 free_tokens(tokens);
                 return (TokensResult){
                     .isok = false,
-                    .err = (SourceError){
-                        .has_location = true,
-                        .source = src,
-                        .src_idx = i,
-                        .len = 1,
+                    .err = (Error){
+                        (ErrorLocation){
+                            .source = src,
+                            .src_idx = i,
+                            .len = 1,
+                        },
                         .message = (GenericStringView){
                             .type = GENERICSTRV_VIEW, .as_view = strv_fromcstr("Syntax error: standalone quote")
                         }
@@ -104,11 +104,12 @@ TokensResult tokenize(const StringView src) {
                 free_tokens(tokens);
                 return (TokensResult){
                     .isok = false,
-                    .err = (SourceError){
-                        .has_location = true,
-                        .source = src,
-                        .src_idx = i,
-                        .len = 2,
+                    .err = (Error){
+                        (ErrorLocation){
+                            .source = src,
+                            .src_idx = i,
+                            .len = 2,
+                        },
                         .message = (GenericStringView){
                             .type = GENERICSTRV_VIEW,
                             .as_view = strv_fromcstr("Syntax error: quote must be followed by word")
@@ -176,9 +177,8 @@ TokensResult tokenize(const StringView src) {
             free_tokens(tokens);
             return (TokensResult){
                 .isok = false,
-                .err = (SourceError){
-                    .has_location = true,
-                    .source = src, .src_idx = i, .len = 1,
+                .err = (Error){
+                    .location = (ErrorLocation){.source = src, .src_idx = i, .len = 1},
                     .message = (GenericStringView){
                         .type = GENERICSTRV_CHAIN,
                         .as_chain = chain
@@ -193,8 +193,8 @@ TokensResult tokenize(const StringView src) {
         StringView errmsg = strv_fromcstr("Source has unmatched brackets: too many opening brackets");
         return (TokensResult){
             .isok = false,
-            .err = (SourceError){
-                .has_location = false,
+            .err = (Error){
+                .location = {0},
                 .message = (GenericStringView){
                     .type = GENERICSTRV_VIEW,
                     .as_view = errmsg
@@ -288,11 +288,12 @@ overflow:
     chain.parts[2] = strv_fromcstr(" is too large to fit in 64 bits.");
     return (ASTNodeResult){
         .isok = false,
-        .err = (SourceError){
-            .has_location = true,
-            .source = source,
-            .src_idx = token.src_idx,
-            .len = token.len,
+        .err = (Error){
+            .location = (ErrorLocation){
+                .source = source,
+                .src_idx = token.src_idx,
+                .len = token.len
+            },
             .message = (GenericStringView){.type = GENERICSTRV_CHAIN, .as_chain = chain}
         }
     };

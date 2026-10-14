@@ -85,19 +85,19 @@ typedef struct {
 typedef struct {
     bool isok;
     Tokens res;
-    SourceError err;
+    Error err;
 } TokensResult;
 
 typedef struct {
     bool isok;
     ASTNode res;
-    SourceError err;
+    Error err;
 } ASTNodeResult;
 
 typedef struct {
     bool isok;
     ASTBlock res;
-    SourceError err;
+    Error err;
 } ASTBlockResult;
 
 bool is_valid_word_tok_first(uint32_t c);
