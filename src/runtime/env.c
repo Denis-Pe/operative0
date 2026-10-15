@@ -46,14 +46,14 @@ void bind(ScopeBindings *bindings, const Word key, const Value v) {
     bindings_push(bindings, &newb);
 }
 
-void free_runtime(const FrameStack fstack) {
+void free_runtime(const FrameStack fstack, const bool including_root_bindings) {
     for (size_t i = 0; i < fstack.len; i++) {
         const Frame f = fstack.ptr[i];
         for (size_t j = 0; j < f.cstack.len; j++) {
             const Call c = f.cstack.ptr[j];
             free(c.args.elements);
         }
-        free(f.bindings.ptr);
+        if (including_root_bindings || i > 0) free(f.bindings.ptr);
         free(f.cstack.ptr);
     }
     free(fstack.ptr);

@@ -50,6 +50,6 @@ LookupResult lookup(FrameStack, const Frame *startingfrom, Word key);
 
 void bind(ScopeBindings *, Word key, Value);
 
-void free_runtime(FrameStack);
+void free_runtime(FrameStack, bool including_root_bindings);
 
 #endif //OPERATIVE_ENV_H

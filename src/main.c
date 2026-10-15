@@ -68,7 +68,7 @@ Value frozen(const ASTNode form) {
     return result;
 }
 
-EvalResult eval_ast(ASTBlock, ScopeBindings builtins);
+EvalResult eval_ast(ASTBlock, ScopeBindings root_bindings, bool free_root_bindings);
 
 EvalResult eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
     Value result;
@@ -116,7 +116,7 @@ EvalResult eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) 
     return (EvalResult){.type = EVAL_VAL, .as_val = result};
 }
 
-EvalResult eval_ast(const ASTBlock root, ScopeBindings builtins) {
+EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool free_root_bindings) {
     EvalResult result;
     Value value = (Value){.type = TYPE_NIL};
     FrameStack fstack = alloc_fstack();
@@ -126,7 +126,7 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings builtins) {
         .as_function = root
     };
     Frame root_frame = (Frame){
-        .bindings = builtins,
+        .bindings = root_bindings,
         .cstack = alloc_cstack(),
         .op = root_op,
         .parent_idx = (OptSize){false},
@@ -152,7 +152,7 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings builtins) {
                 fprintast(stderr, tree, 0);
                 panicf("");
             }
-            free(f->bindings.ptr);
+            if (free_root_bindings || fstack.len > 1) free(f->bindings.ptr);
             free(cstack->ptr);
             fstack_pop(&fstack);
             f = fstack_peek(&fstack);
@@ -165,7 +165,7 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings builtins) {
         }
         result = eval_form(tree.seq.ptr[i], fstack, f);
         if (result.type == EVAL_ERR) {
-            free_runtime(fstack);
+            free_runtime(fstack, free_root_bindings);
             return result;
         }
         value = result.as_val;
@@ -259,7 +259,7 @@ int execute_file(const char *path) {
     }
     const ASTBlock root = rootres.res;
     const ScopeBindings builtins = default_builtins();
-    const EvalResult r = eval_ast(root, builtins);
+    const EvalResult r = eval_ast(root, builtins, true);
     if (r.type == EVAL_ERR) {
         free_tokens(tokens);
         free_block(root);
@@ -278,6 +278,8 @@ int execute_file(const char *path) {
 }
 
 void repl(void) {
+    const ScopeBindings root_bindings = default_builtins();
+
     printf("Operative v0\n");
     while (true) {
         printf("> ");
@@ -306,8 +308,8 @@ void repl(void) {
             continue;
         }
         const ASTBlock root = rootres.res;
-        const ScopeBindings builtins = default_builtins();
-        const EvalResult r = eval_ast(root, builtins);
+
+        const EvalResult r = eval_ast(root, root_bindings, false);
         if (r.type == EVAL_ERR) {
             free_tokens(tokens);
             free_block(root);
