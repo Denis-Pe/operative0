@@ -279,11 +279,11 @@ int execute_file(const char *path) {
 
 void repl(void) {
     const ScopeBindings root_bindings = default_builtins();
+    String *repl_input = alloc_str();
 
     printf("Operative v0\n");
     while (true) {
         printf("> ");
-        String *repl_input = alloc_str();
         char c = (char) getc(stdin);
         while (c != '\n' && !(ferror(stdin) || feof(stdin))) {
             str_push(&repl_input, c);
@@ -322,12 +322,14 @@ void repl(void) {
 
         free_tokens(tokens);
         free_block(root);
-        if (repl_input) free_str(repl_input);
+        str_popall(repl_input);
 
         if (feof(stdin)) {
             return;
         }
     }
+
+    free_str(repl_input);
 }
 
 int main(const int argc, char *argv[]) {

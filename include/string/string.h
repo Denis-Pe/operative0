@@ -53,6 +53,9 @@ StringView strv_fromstr(const String *str);
 
 void str_accomodate(String **string, size_t ideal_cap);
 
+/// Does not shrink the allocated memory
+void str_popall(String *string);
+
 void str_push(String **string, uint32_t character);
 
 void str_pushcstr(String **string, const char *cstr);

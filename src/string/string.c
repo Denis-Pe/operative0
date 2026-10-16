@@ -44,6 +44,10 @@ void str_accomodate(String **string, const size_t ideal_cap) {
     }
 }
 
+void str_popall(String *string) {
+    string->len = 0;
+}
+
 void str_push(String **string, const uint32_t character) {
     assert(string != NULL);
     assert(*string != NULL);
