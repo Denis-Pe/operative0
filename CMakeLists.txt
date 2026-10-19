@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 project(operative C)
 
+enable_testing()
+
 set(CMAKE_C_STANDARD 11)
 
 add_executable(operative src/main.c
@@ -46,6 +48,8 @@ add_executable(tests
         src/unity.c
         src/tests/t-string.c
 )
+
+add_test(NAME tests COMMAND tests)
 
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wpedantic)
