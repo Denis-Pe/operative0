@@ -239,8 +239,7 @@ ScopeBindings default_builtins(void) {
 
 int execute_file(const char *path) {
     StringView src;
-    String *file_content = NULL;
-    file_content = read_file(path);
+    String *file_content = read_file(path);
     if (file_content == NULL) {
         panicf("Unable to continue. Encountered error while reading file %s\n", path);
     }

@@ -17,6 +17,7 @@ void test_equality(void) {
     str_push(&s, 'd');
     TEST_ASSERT_TRUE(strv_cmp(a, strv_fromstr(s)) == 0);
     TEST_ASSERT_TRUE(strv_cmpcstr(a, uncooked) == 0);
+    free_str(s);
 }
 
 int main(void) {

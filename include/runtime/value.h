@@ -53,7 +53,7 @@ struct Value {
 
     union {
         Word as_word;
-        int64_t as_integer;
+        long long as_integer;
         double as_double;
         Block as_block;
         Operative as_op;
