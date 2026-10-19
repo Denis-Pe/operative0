@@ -14,14 +14,14 @@ These milestones represent the minimal acceptable state of Operative0
 
 - [x] parsing
 - [x] runtime environment foundations
-- [ ] TCO
 - [ ] builtin library
     - [ ] function definition
-    - [ ] arithmetic
+    - [ ] extensive arithmetic
     - [ ] I/O
     - [ ] granular control flow
     - [ ] environment manipulation
     - [ ] C access
+- [ ] TCO
 - [ ] file preface
 - [ ] full metacircularity
     - [ ] preface dialecting
