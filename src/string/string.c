@@ -89,7 +89,7 @@ bool str_pushfile(String **string, FILE *f, const size_t bytes) {
     str_accomodate(string, (*string)->len + bytes);
     size_t consumption = 0;
     while (consumption < bytes) {
-        const size_t n = fread((*string)->ptr, 1, bytes - consumption, f);
+        const size_t n = fread((*string)->ptr + consumption, 1, bytes - consumption, f);
         consumption += n;
         if (n == 0) {
             if (ferror(f)) {
