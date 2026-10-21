@@ -15,7 +15,7 @@ bool mul_overflow_ll(const long long a, const long long b, long long *result) {
 #else
 
 bool add_overflow_ll(const long long a, const long long b, long long *result) {
-    if ((b > 0 && a > INT_MAX - b) || (b < 0 && a < INT_MIN - b)) {
+    if ((b > 0 && a > LLONG_MAX - b) || (b < 0 && a < LLONG_MIN - b)) {
         return true;
     }
     *result = a + b;
@@ -24,11 +24,11 @@ bool add_overflow_ll(const long long a, const long long b, long long *result) {
 
 bool mul_overflow_ll(const long long a, const long long b, long long *result) {
     if (a > 0) {
-        if (b > 0 && a > INT_MAX / b) return true;
-        if (b < 0 && b < INT_MIN / a) return true;
+        if (b > 0 && a > LLONG_MAX / b) return true;
+        if (b < 0 && b < LLONG_MIN / a) return true;
     } else if (a < 0) {
-        if (b > 0 && a < INT_MIN / b) return true;
-        if (b < 0 && b < INT_MAX / a) return true;
+        if (b > 0 && a < LLONG_MIN / b) return true;
+        if (b < 0 && b < LLONG_MAX / a) return true;
     }
     *result = a * b;
     return false;
