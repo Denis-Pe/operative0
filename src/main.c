@@ -324,11 +324,10 @@ void repl(void) {
         str_popall(repl_input);
 
         if (feof(stdin)) {
+            free_str(repl_input);
             return;
         }
     }
-
-    free_str(repl_input);
 }
 
 int main(const int argc, char *argv[]) {
