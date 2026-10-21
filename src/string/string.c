@@ -76,17 +76,13 @@ void str_pushcstr(String **string, const char *cstr) {
     }
 }
 
-// TODO optimize by directly allocating enough room + memcpy rather than pushing 1 by 1
 void str_pushstr(String **string, const String *new_data) {
     assert(string != NULL);
     assert(*string != NULL);
     assert(new_data != NULL);
-
-    for (size_t i = 0; i < new_data->len; i++) {
-        const uint8_t c = new_data->ptr[i];
-        assert(c <= 127);
-        str_push(string, c);
-    }
+    str_accomodate(string, (*string)->len + new_data->len);
+    memcpy((*string)->ptr + (*string)->len, new_data->ptr, new_data->len);
+    (*string)->len += new_data->len;
 }
 
 bool str_pushfile(String **string, FILE *f, const size_t bytes) {

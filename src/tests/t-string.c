@@ -20,8 +20,26 @@ void test_equality(void) {
     free_str(s);
 }
 
+void test_concat(void) {
+    String *expected = alloc_str_fromcstr("nasislike");
+    String *concat = alloc_str();
+    String *nas = alloc_str_fromcstr("nas");
+    String *is = alloc_str_fromcstr("is");
+    String *like = alloc_str_fromcstr("like");
+    str_pushstr(&concat, nas);
+    str_pushstr(&concat, is);
+    str_pushstr(&concat, like);
+    TEST_ASSERT_TRUE(str_cmp(concat, expected) == 0);
+    free_str(expected);
+    free_str(concat);
+    free_str(nas);
+    free_str(is);
+    free_str(like);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_equality);
+    RUN_TEST(test_concat);
     return UNITY_END();
 }
