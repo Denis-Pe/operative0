@@ -137,6 +137,12 @@ size_t str_len(const String *str) {
     return str->len;
 }
 
+int str_cmp(const String *a, const String *b) {
+    assert(a != NULL);
+    assert(b != NULL);
+    return strv_cmp(strv_fromstr(a), strv_fromstr(b));
+}
+
 int str_cmpcstr(const String *str, const char *cstr) {
     return strv_cmpcstr(strv_fromstr(str), cstr);
 }

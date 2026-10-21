@@ -73,6 +73,8 @@ size_t str_len(const String *str);
 
 size_t strv_len(StringView strv);
 
+int str_cmp(const String *a, const String *b);
+
 int str_cmpcstr(const String *str, const char *cstr);
 
 int strv_cmpcstr(StringView strv, const char *cstr);
