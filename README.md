@@ -37,7 +37,7 @@ Only tested in Debian 13 and Windows 11
 
 Requirements:
 
-- CMake 3.30 or higher
+- CMake 3.20 or higher
 - C11-capable compiler
 
 Otherwise, the standard CMake commands can be used. For example, in Debian:

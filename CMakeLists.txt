@@ -1,78 +1,48 @@
-cmake_minimum_required(VERSION 3.30)
-project(operative C)
-
-enable_testing()
+cmake_minimum_required(VERSION 3.20)
+project(operative LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
-add_executable(operative src/main.c
-        include/seq.h
-        include/error.h
-        src/error.c
-        src/string/string.c
-        include/string/string.h
-        src/string/pred.c
-        include/string/pred.h
-        src/parsing.c
-        include/parsing.h
-        src/runtime/value.c
-        include/runtime/value.h
-        src/runtime/env.c
-        include/runtime/env.h
-        src/surface.c
-        include/surface.h
-        src/miscutil.c
-        include/miscutil.h
-)
+add_library(operative_options INTERFACE)
 
-add_executable(tests
-        include/seq.h
-        include/error.h
-        src/error.c
-        src/string/string.c
-        include/string/string.h
-        src/string/pred.c
-        include/string/pred.h
-        src/parsing.c
-        include/parsing.h
-        src/runtime/value.c
-        include/runtime/value.h
-        src/runtime/env.c
-        include/runtime/env.h
-        src/surface.c
-        include/surface.h
-        src/miscutil.c
-        include/miscutil.h
-        include/unity.h
-        include/unity_internals.h
-        src/unity.c
-        src/tests/t-string.c
-)
-
-add_test(NAME tests COMMAND tests)
-
-if(NOT MSVC)
-    add_compile_options(-Wall -Wextra -Wpedantic)
-    target_compile_options(operative PRIVATE
-            $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-            $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+if(MSVC)
+    target_compile_options(operative_options INTERFACE /W4)
+else()
+    target_compile_options(operative_options INTERFACE
+            -Wall -Wextra -Wpedantic
+            $<$<CONFIG:Debug>:-fsanitize=address,undefined -fno-omit-frame-pointer>
     )
-
-    target_link_options(operative PRIVATE
-            $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-    )
-
-
-    target_compile_options(tests PRIVATE
-            $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-            $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
-    )
-
-    target_link_options(tests PRIVATE
+    target_link_options(operative_options INTERFACE
             $<$<CONFIG:Debug>:-fsanitize=address,undefined>
     )
 endif()
 
-target_include_directories(operative PRIVATE ${PROJECT_SOURCE_DIR}/include)
+add_library(operative_core STATIC
+        src/error.c
+        src/string/string.c
+        src/string/pred.c
+        src/parsing.c
+        src/runtime/value.c
+        src/runtime/env.c
+        src/surface.c
+        src/miscutil.c
+)
+target_include_directories(operative_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(operative_core PUBLIC operative_options)
 
-target_include_directories(tests PRIVATE ${PROJECT_SOURCE_DIR}/include)
+add_executable(operative src/main.c)
+target_link_libraries(operative PRIVATE operative_core)
+
+# Tests
+include(CTest)
+
+if(BUILD_TESTING)
+    add_library(unity STATIC src/unity.c)
+    target_include_directories(unity PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+    add_executable(t-string src/tests/t-string.c)
+    target_link_libraries(t-string PRIVATE operative_core unity)
+    add_test(NAME string COMMAND t-string)
+endif()
