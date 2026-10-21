@@ -321,7 +321,10 @@ ASTBlockResult parse_tokens_helper(const TokensSlice tokens, size_t *i, const si
                     node.type = AST_BLOCK;
                     (*i)++;
                     bres = parse_tokens_helper(tokens, i, depth + 1, source);
-                    if (!bres.isok) return bres;
+                    if (!bres.isok) {
+                        free_block(root);
+                        return bres;
+                    }
                     node.as_block = bres.res;
                     node.src_idx = tok.src_idx;
                     const Token closing_bracket = tokens.ptr[(*i) - 1];
@@ -389,12 +392,12 @@ void fprintast(FILE *stream, const ASTBlock root, const size_t indent) {
     for (size_t i = 0; i < root.seq.len; i++) {
         const ASTNode node = root.seq.ptr[i];
 
-        for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) printf(" ");
+        for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) fprintf(stream, " ");
 
         if (node.type == AST_BLOCK) {
             fprintf(stream, "Block: [\n");
             fprintast(stream, node.as_block, indent + 1);
-            for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) printf(" ");
+            for (size_t j = 0; j < indent * ASTPRINT_INDENT_WIDTH; j++) fprintf(stream, " ");
             fprintf(stream, "]");
         } else {
             fprintatom(stream, node);

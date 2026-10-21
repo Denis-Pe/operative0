@@ -63,6 +63,8 @@ Value frozen(const ASTNode form) {
                 result.as_block.elements[i] = frozen(form.as_block.seq.ptr[i]);
             }
             break;
+        default:
+            exhaustive_switch();
     }
 
     return result;

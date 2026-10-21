@@ -9,7 +9,11 @@
 #include "error.h"
 
 Block alloc_block(const size_t size) {
-    return (Block){malloc(sizeof(Value) * size), size};
+    Value *ptr = malloc(sizeof(Value) * size);
+    if (ptr == NULL && size > 0) {
+        panic_errno();
+    }
+    return (Block){ptr, size};
 }
 
 Block alloc_block_clean(const size_t size) {
