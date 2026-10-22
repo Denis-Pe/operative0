@@ -63,6 +63,6 @@ void report_err(const Error err) {
         }
         fprintf(stderr, "\n");
     }
-    fprintgstrv(stderr, err.message);
+    fprintstrvc(stderr, err.message);
     fprintf(stderr, "\n");
 }

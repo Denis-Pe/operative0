@@ -104,6 +104,17 @@ bool str_pushfile(String **string, FILE *f, const size_t bytes) {
     return true;
 }
 
+void strvc_push(StringVChain *strvc, const StringView strv) {
+    for (size_t i = 0; i < MAX_STRCHAIN_SIZE; i++) {
+        const StringView link = strvc->parts[i];
+        if (link.impl_len == 0) {
+            strvc->parts[i] = strv;
+            return;
+        }
+    }
+    assert(false && "Chain is full");
+}
+
 String *alloc_str_fromcstr(const char *cstr) {
     assert(cstr != NULL);
     String *s = alloc_str();
@@ -179,6 +190,17 @@ StringView strv_fromstr(const String *str) {
         .impl_ptr = str->ptr,
         .impl_len = str->len
     };
+}
+
+StringVChain strvc_newempty(void) {
+    const StringVChain chain = {0};
+    return chain;
+}
+
+StringVChain strvc_fromstrv(const StringView strv) {
+    StringVChain chain = strvc_newempty();
+    strvc_push(&chain, strv);
+    return chain;
 }
 
 size_t strv_len(const StringView strv) {
@@ -268,17 +290,4 @@ void fprintstrvc(FILE *stream, const StringVChain strvc) {
     for (size_t i = 0; i < MAX_STRCHAIN_SIZE; i++)
         if (strvc.parts[i].impl_ptr)
             fprintstrv(stream, strvc.parts[i]);
-}
-
-void fprintgstrv(FILE *stream, const GenericStringView gstrv) {
-    switch (gstrv.type) {
-        case GENERICSTRV_CHAIN:
-            fprintstrvc(stream, gstrv.as_chain);
-            break;
-        case GENERICSTRV_VIEW:
-            fprintstrv(stream, gstrv.as_view);
-            break;
-        default:
-            exhaustive_switch();
-    }
 }

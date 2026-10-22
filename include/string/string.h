@@ -11,11 +11,6 @@
 
 #define MAX_STRCHAIN_SIZE 10
 
-enum GenericSTRVType {
-    GENERICSTRV_VIEW,
-    GENERICSTRV_CHAIN,
-};
-
 typedef struct String String;
 
 /// Borrowed string, not null-terminated
@@ -30,15 +25,6 @@ typedef struct {
     StringView parts[MAX_STRCHAIN_SIZE];
 } StringVChain;
 
-typedef struct {
-    enum GenericSTRVType type;
-
-    union {
-        StringView as_view;
-        StringVChain as_chain;
-    };
-} GenericStringView;
-
 String *alloc_str_cap(size_t cap);
 
 String *alloc_str(void);
@@ -50,6 +36,10 @@ String *alloc_str_clone(const String *from);
 StringView strv_fromcstr(const char *cstr);
 
 StringView strv_fromstr(const String *str);
+
+StringVChain strvc_newempty(void);
+
+StringVChain strvc_fromstrv(StringView);
 
 void str_accomodate(String **string, size_t ideal_cap);
 
@@ -64,6 +54,8 @@ void str_pushstr(String **string, const String *new_data);
 
 /// Starting from the current stream position, up to bytes or until EOF. Returns false on ferror
 bool str_pushfile(String **string, FILE *, size_t bytes);
+
+void strvc_push(StringVChain *, StringView);
 
 uint32_t str_char_at(const String *str, size_t index);
 
@@ -92,8 +84,6 @@ void fprintstr(FILE *stream, const String *str);
 void fprintstrv(FILE *stream, StringView strv);
 
 void fprintstrvc(FILE *stream, StringVChain strvc);
-
-void fprintgstrv(FILE *stream, GenericStringView gstrv);
 
 void free_str(String *s);
 

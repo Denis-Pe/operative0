@@ -62,15 +62,11 @@ TokensResult tokenize(const StringView src) {
         } else if (c == ']') {
             if (depth == 0) {
                 free_tokens(tokens);
-                StringView errmsg = strv_fromcstr("Source has unmatched brackets: extra closing bracket");
                 return (TokensResult){
                     .isok = false,
                     .err = (Error){
                         .location = (ErrorLocation){.source = src, .src_idx = i, .len = 1},
-                        .message = (GenericStringView){
-                            .type = GENERICSTRV_VIEW,
-                            .as_view = errmsg
-                        }
+                        .message = strvc_fromstrv(strv_fromcstr("Source has unmatched brackets: extra closing bracket"))
                     }
                 };
             }
@@ -95,9 +91,7 @@ TokensResult tokenize(const StringView src) {
                             .src_idx = i,
                             .len = 1,
                         },
-                        .message = (GenericStringView){
-                            .type = GENERICSTRV_VIEW, .as_view = strv_fromcstr("Syntax error: standalone quote")
-                        }
+                        .message = strvc_fromstrv(strv_fromcstr("Syntax error: standalone quote"))
                     }
                 };
             }
@@ -111,10 +105,7 @@ TokensResult tokenize(const StringView src) {
                             .src_idx = i,
                             .len = 2,
                         },
-                        .message = (GenericStringView){
-                            .type = GENERICSTRV_VIEW,
-                            .as_view = strv_fromcstr("Syntax error: quote must be followed by word")
-                        }
+                        .message = strvc_fromstrv(strv_fromcstr("Syntax error: quote must be followed by word"))
                     }
                 };
             }
@@ -172,18 +163,15 @@ TokensResult tokenize(const StringView src) {
             tok.len = 1;
             has_token = true;
         } else {
-            StringVChain chain = {0};
-            chain.parts[0] = strv_fromcstr("Parsing error: Unexpected character found: ");
-            chain.parts[1] = strv_slice(src, i, 1);
+            StringVChain chain = strvc_newempty();
+            strvc_push(&chain, strv_fromcstr("Parsing error: Unexpected character found: "));
+            strvc_push(&chain, strv_slice(src, i, 1));
             free_tokens(tokens);
             return (TokensResult){
                 .isok = false,
                 .err = (Error){
                     .location = (ErrorLocation){.source = src, .src_idx = i, .len = 1},
-                    .message = (GenericStringView){
-                        .type = GENERICSTRV_CHAIN,
-                        .as_chain = chain
-                    }
+                    .message = chain
                 }
             };
         }
@@ -191,15 +179,11 @@ TokensResult tokenize(const StringView src) {
 
     if (depth != 0) {
         free_tokens(tokens);
-        StringView errmsg = strv_fromcstr("Source has unmatched brackets: too many opening brackets");
         return (TokensResult){
             .isok = false,
             .err = (Error){
                 .location = {0},
-                .message = (GenericStringView){
-                    .type = GENERICSTRV_VIEW,
-                    .as_view = errmsg
-                }
+                .message = strvc_fromstrv(strv_fromcstr("Source has unmatched brackets: too many opening brackets"))
             }
         };
     }
@@ -284,9 +268,10 @@ ASTNodeResult parse_number(const Token token, const StringView source) {
     return (ASTNodeResult){.isok = true, .res = result};
 
 overflow:
-    chain.parts[0] = strv_fromcstr("Parsing error: number ");
-    chain.parts[1] = token.as_number;
-    chain.parts[2] = strv_fromcstr(" is too large to fit in a long long.");
+    chain = strvc_newempty();
+    strvc_push(&chain, strv_fromcstr("Parsing error: number "));
+    strvc_push(&chain, token.as_number);
+    strvc_push(&chain, strv_fromcstr(" is too large to fit in a long long."));
     return (ASTNodeResult){
         .isok = false,
         .err = (Error){
@@ -295,7 +280,7 @@ overflow:
                 .src_idx = token.src_idx,
                 .len = token.len
             },
-            .message = (GenericStringView){.type = GENERICSTRV_CHAIN, .as_chain = chain}
+            .message = chain
         }
     };
 }

@@ -86,15 +86,15 @@ EvalResult eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) 
                 if (lr.is_bound) {
                     result = lr.value;
                 } else {
-                    StringVChain chain = {0};
-                    chain.parts[0] = strv_fromcstr("Error: evaluated word `");
-                    chain.parts[1] = form.as_word.content;
-                    chain.parts[2] = strv_fromcstr("` is unbound.");
+                    StringVChain chain = strvc_newempty();
+                    strvc_push(&chain, strv_fromcstr("Error: evaluated word `"));
+                    strvc_push(&chain, form.as_word.content);
+                    strvc_push(&chain, strv_fromcstr("` is unbound."));
                     return (EvalResult){
                         .type = EVAL_ERR,
                         .as_err = (Error){
                             .location = {0},
-                            .message = (GenericStringView){.type = GENERICSTRV_CHAIN, .as_chain = chain}
+                            .message = chain
                         }
                     };
                 }
@@ -298,12 +298,14 @@ void repl(void) {
         const StringView src = strv_fromstr(repl_input);
         const TokensResult tokensres = tokenize(src);
         if (!tokensres.isok) {
+            str_popall(repl_input);
             report_err(tokensres.err);
             continue;
         }
         const Tokens tokens = tokensres.res;
         const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
         if (!rootres.isok) {
+            str_popall(repl_input);
             free_tokens(tokens);
             report_err(rootres.err);
             continue;
@@ -312,6 +314,7 @@ void repl(void) {
 
         const EvalResult r = eval_ast(root, root_bindings, false);
         if (r.type == EVAL_ERR) {
+            str_popall(repl_input);
             free_tokens(tokens);
             free_block(root);
             report_err(r.as_err);

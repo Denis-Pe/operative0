@@ -11,7 +11,7 @@ typedef struct {
 
 typedef struct {
     ErrorLocation location;
-    GenericStringView message;
+    StringVChain message;
 } Error;
 
 void panicf(const char *format, ...);
