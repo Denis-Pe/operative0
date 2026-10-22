@@ -379,7 +379,7 @@ void fprintatom(FILE *stream, const ASTNode node) {
             fprintstrv(stream, node.as_word.content);
             break;
         case AST_INTEGER:
-            fprintf(stream, "Integer: %ld", node.as_integer);
+            fprintf(stream, "Integer: %lld", node.as_integer);
             break;
         case AST_DOUBLE:
             fprintf(stream, "Double: %lf", node.as_double);

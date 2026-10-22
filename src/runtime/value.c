@@ -33,7 +33,7 @@ void printval(const Value v) {
             printf("%lf", v.as_double);
             break;
         case TYPE_INT:
-            printf("%ld", v.as_integer);
+            printf("%lld", v.as_integer);
             break;
         case TYPE_BLOCK:
             printf("[");
