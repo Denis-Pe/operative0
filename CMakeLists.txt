@@ -46,3 +46,6 @@ if(BUILD_TESTING)
     target_link_libraries(t-string PRIVATE operative_core unity)
     add_test(NAME string COMMAND t-string)
 endif()
+
+include(GNUInstallDirs)
+install(TARGETS operative RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
