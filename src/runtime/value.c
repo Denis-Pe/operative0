@@ -47,7 +47,7 @@ void printval(const Value v) {
             printf("]");
             break;
         case TYPE_OP:
-            switch (v.type) {
+            switch (v.as_op.type) {
                 case OP_BUILTIN:
                     printf("(BUILTIN @ %p)", (void *) (uintptr_t) v.as_op.as_builtin);
                     break;
