@@ -298,26 +298,26 @@ void repl(void) {
         const StringView src = strv_fromstr(repl_input);
         const TokensResult tokensres = tokenize(src);
         if (!tokensres.isok) {
-            str_popall(repl_input);
             report_err(tokensres.err);
+            str_popall(repl_input);
             continue;
         }
         const Tokens tokens = tokensres.res;
         const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
         if (!rootres.isok) {
+            report_err(rootres.err);
             str_popall(repl_input);
             free_tokens(tokens);
-            report_err(rootres.err);
             continue;
         }
         const ASTBlock root = rootres.res;
 
         const EvalResult r = eval_ast(root, root_bindings, false);
         if (r.type == EVAL_ERR) {
+            report_err(r.as_err);
             str_popall(repl_input);
             free_tokens(tokens);
             free_block(root);
-            report_err(r.as_err);
             continue;
         }
         const Value v = r.as_val;
