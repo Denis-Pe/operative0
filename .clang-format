@@ -1,0 +1,41 @@
+BasedOnStyle: LLVM
+Language: Cpp
+
+IndentWidth: 4
+ContinuationIndentWidth: 4
+UseTab: Never
+
+ColumnLimit: 120
+
+BreakBeforeBraces: Attach
+
+IndentCaseLabels: true
+
+PointerAlignment: Right
+
+SpaceAfterCStyleCast: true
+
+BreakBeforeBinaryOperators: NonAssignment
+
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+
+SpacesInLineCommentPrefix:
+  Minimum: 0
+  Maximum: -1
+
+SortIncludes: CaseSensitive
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<'     # <stdio.h>, <stdlib.h>, ...
+    Priority: 1
+  - Regex: '^"'     # "parsing.h", "runtime/value.h", ...
+    Priority: 2
+
+MaxEmptyLinesToKeep: 1
+
+AlignEscapedNewlines: DontAlign
