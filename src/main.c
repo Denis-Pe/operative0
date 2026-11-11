@@ -221,12 +221,30 @@ int execute_file(const char *path) {
     return EXIT_SUCCESS;
 }
 
+typedef struct {
+    String *src;
+    Block tree;
+} ReplEntry;
+
+DECLARE_SEQ(REntries, rentries, ReplEntry)
+DEFINE_SEQ(REntries, rentries, ReplEntry)
+
+void free_repl(REntries entries) {
+    for (size_t i = 0; i < entries.len; i++) {
+        free_str(entries.ptr[i].src);
+        free_block(entries.ptr[i].tree);
+    }
+    free(entries.ptr);
+}
+
 void repl(void) {
     const ScopeBindings root_bindings = default_builtins();
-    String *repl_input = alloc_str();
+    String *repl_input;
+    REntries entries = alloc_rentries();
 
     printf("Operative v0\n");
     while (true) {
+        repl_input = alloc_str();
         printf("> ");
         char c = (char) getc(stdin);
         while (c != '\n' && !(ferror(stdin) || feof(stdin))) {
@@ -234,33 +252,44 @@ void repl(void) {
             c = (char) getc(stdin);
         }
         if (ferror(stdin)) {
-            if (errno == EINTR) return;
+            if (errno == EINTR) {
+                free_repl(entries);
+                free_str(repl_input);
+                free(root_bindings.ptr);
+                return;
+            }
             panicf("A fundamental error was encountered while reading stdin. Unable to reliably continue.");
+        }
+        if (str_cmpcstr(repl_input, "exit") == 0) {
+            free_repl(entries);
+            free_str(repl_input);
+            free(root_bindings.ptr);
+            return;
         }
 
         const StringView src = strv_fromstr(repl_input);
         const TokensResult tokensres = tokenize(src);
         if (!tokensres.isok) {
             report_err(tokensres.err);
-            str_popall(repl_input);
+            free_str(repl_input);
             continue;
         }
         const Tokens tokens = tokensres.res;
         const BlockResult rootres = parse_tokens((TokensSlice) {tokens.ptr, tokens.len}, src);
         if (!rootres.isok) {
             report_err(rootres.err);
-            str_popall(repl_input);
+            free_str(repl_input);
             free_tokens(tokens);
             continue;
         }
         const Block root = rootres.res;
+        const ReplEntry entry = (ReplEntry) {repl_input, root};
+        rentries_push(&entries, &entry);
 
         const EvalResult r = eval_ast(root, root_bindings, false);
         if (r.type == EVAL_ERR) {
             report_err(r.as_err);
-            str_popall(repl_input);
             free_tokens(tokens);
-            free_block(root);
             continue;
         }
         const Value v = r.as_val;
@@ -268,11 +297,9 @@ void repl(void) {
         printf("\n");
 
         free_tokens(tokens);
-        free_block(root);
-        str_popall(repl_input);
 
         if (feof(stdin)) {
-            free_str(repl_input);
+            free_repl(entries);
             return;
         }
     }
