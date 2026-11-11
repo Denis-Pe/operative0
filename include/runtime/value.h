@@ -4,12 +4,17 @@
 
 #ifndef OPERATIVE_VALUE_H
 #define OPERATIVE_VALUE_H
-#include "parsing.h"
+#include "error.h"
 #include "string/string.h"
 
 typedef struct Value Value;
 
 typedef StringView Word;
+
+typedef struct {
+    size_t idx;
+    size_t len;
+} SourceSpan;
 
 typedef struct {
     Value *elements;
@@ -19,6 +24,8 @@ typedef struct {
 Block alloc_block(size_t size);
 
 Block alloc_block_clean(size_t size);
+
+void free_block(Block);
 
 struct Call;
 
@@ -35,13 +42,14 @@ typedef struct {
 
     union {
         BuiltInOp as_builtin;
-        ASTBlock as_function;
+        Block as_function;
     };
 } Operative;
 
 enum ValueType {
     TYPE_BLOCK,
     TYPE_WORD,
+    TYPE_LITWORD,
     TYPE_INT,
     TYPE_DOUBLE,
     TYPE_OP,
@@ -60,6 +68,22 @@ struct Value {
     };
 };
 
+typedef struct {
+    bool isok;
+    Value res;
+    Error err;
+} ValueResult;
+
+typedef struct {
+    bool isok;
+    Block res;
+    Error err;
+} BlockResult;
+
+void fprintval(FILE *, Value v);
+
 void printval(Value v);
+
+void free_value(Value v);
 
 #endif //OPERATIVE_VALUE_H

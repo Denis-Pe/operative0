@@ -7,9 +7,9 @@
 
 #include <stddef.h>
 
-#include "string/string.h"
+#include "runtime/value.h"
 #include "seq.h"
-#include "string/pred.h"
+#include "string/string.h"
 
 #define ASCII_0 48
 #define ASTPRINT_INDENT_WIDTH 4
@@ -20,13 +20,6 @@ enum TokenType {
     TOKEN_BRACKET,
     TOKEN_WHITESPACE,
     TOKEN_NUMBER
-};
-
-enum ASTNodeType {
-    AST_WORD,
-    AST_INTEGER,
-    AST_DOUBLE,
-    AST_BLOCK
 };
 
 typedef struct {
@@ -50,33 +43,6 @@ typedef struct {
 
 DECLARE_SEQ(Tokens, tokens, Token)
 
-typedef struct ASTNode ASTNode;
-
-DECLARE_SEQ(ASTBlockSeq, astblock, ASTNode)
-
-typedef struct {
-    ASTBlockSeq seq;
-    size_t depth;
-} ASTBlock;
-
-typedef struct {
-    StringView content;
-    bool is_quoted;
-} ASTWord;
-
-struct ASTNode {
-    size_t src_idx;
-    size_t src_len;
-    enum ASTNodeType type;
-
-    union {
-        ASTWord as_word;
-        long long as_integer;
-        double as_double;
-        ASTBlock as_block;
-    };
-};
-
 typedef struct {
     Token *ptr;
     size_t len;
@@ -88,42 +54,12 @@ typedef struct {
     Error err;
 } TokensResult;
 
-typedef struct {
-    bool isok;
-    ASTNode res;
-    Error err;
-} ASTNodeResult;
-
-typedef struct {
-    bool isok;
-    ASTBlock res;
-    Error err;
-} ASTBlockResult;
-
-bool is_valid_word_tok_first(uint32_t c);
-
-bool is_valid_word_tok_rest(uint32_t c);
-
-void emit_token(Tokens *tokens, const Token *tok, bool *has_token);
-
 TokensResult tokenize(StringView src);
 
-void emit_node(ASTBlock *root, const ASTNode *node, bool *has_node);
-
-ASTNodeResult parse_number(Token token, StringView source);
-
-ASTBlockResult parse_tokens(TokensSlice tokens, StringView source);
-
-void fprintatom(FILE *stream, ASTNode node);
-
-void fprintast(FILE *stream, ASTBlock root, size_t indent);
+BlockResult parse_tokens(TokensSlice tokens, StringView source);
 
 void free_token(Token token);
 
 void free_tokens(Tokens tokens);
-
-void free_block(ASTBlock block);
-
-void free_node(ASTNode node);
 
 #endif //OPERATIVE_PARSING_H

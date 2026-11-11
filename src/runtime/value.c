@@ -4,56 +4,62 @@
 
 #include "runtime/value.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "error.h"
 
 Block alloc_block(const size_t size) {
-    Value *ptr = malloc(sizeof(Value) * size);
-    if (ptr == NULL && size > 0) {
+    const size_t allocation_size = size ? sizeof(Value) * size : 1;
+    Value *ptr = malloc(allocation_size);
+    if (ptr == NULL) {
         panic_errno();
     }
-    return (Block){ptr, size};
+    return (Block) {ptr, size};
 }
 
 Block alloc_block_clean(const size_t size) {
     const Block b = alloc_block(size);
     for (size_t i = 0; i < size; i++) {
-        b.elements[i] = (Value){.type = TYPE_NIL};
+        b.elements[i] = (Value) {.type = TYPE_NIL};
     }
     return b;
 }
 
-void printval(const Value v) {
+void fprintval(FILE *stream, const Value v) {
     switch (v.type) {
+        case TYPE_LITWORD:
+            fprintf(stream, "'");
+            fprintstrv(stream, v.as_word);
+            break;
         case TYPE_WORD:
-            fprintstrv(stdout, v.as_word);
+            fprintstrv(stream, v.as_word);
             break;
         case TYPE_DOUBLE:
-            printf("%lf", v.as_double);
+            fprintf(stream, "%lf", v.as_double);
             break;
         case TYPE_INT:
-            printf("%lld", v.as_integer);
+            fprintf(stream, "%lld", v.as_integer);
             break;
         case TYPE_BLOCK:
-            printf("[");
+            fprintf(stream, "[");
             if (v.as_block.len) {
-                printval(v.as_block.elements[0]);
+                fprintval(stream, v.as_block.elements[0]);
             }
             for (size_t i = 1; i < v.as_block.len; i++) {
-                printf(" ");
-                printval(v.as_block.elements[i]);
+                fprintf(stream, " ");
+                fprintval(stream, v.as_block.elements[i]);
             }
-            printf("]");
+            fprintf(stream, "]");
             break;
         case TYPE_OP:
             switch (v.as_op.type) {
                 case OP_BUILTIN:
-                    printf("(BUILTIN @ %p)", (void *) (uintptr_t) v.as_op.as_builtin);
+                    fprintf(stream, "(BUILTIN @ %p)", (void *) (uintptr_t) v.as_op.as_builtin);
                     break;
                 case OP_FUNCTION:
-                    printf("(FUN BLOCK @ %p with length %zu)", (void *) v.as_op.as_function.seq.ptr,
-                           v.as_op.as_function.seq.len);
+                    fprintf(stream, "(FUN BLOCK @ %p with length %zu)", (void *) v.as_op.as_function.elements,
+                            v.as_op.as_function.len);
                     break;
                 default:
                     exhaustive_switch();
@@ -62,4 +68,21 @@ void printval(const Value v) {
         default:
             exhaustive_switch();
     }
+}
+
+void printval(const Value v) {
+    fprintval(stdout, v);
+}
+
+void free_value(Value v) {
+    if (v.type == TYPE_BLOCK) {
+        free_block(v.as_block);
+    }
+}
+
+void free_block(Block b) {
+    for (size_t i = 0; i < b.len; i++) {
+        free_value(b.elements[i]);
+    }
+    free(b.elements);
 }

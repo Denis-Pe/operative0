@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <stdnoreturn.h>
 
-#include "string/string.h"
 #include "parsing.h"
-#include "seq.h"
-#include "surface.h"
-#include "runtime/value.h"
 #include "runtime/env.h"
+#include "runtime/value.h"
+#include "seq.h"
+#include "string/string.h"
+#include "surface.h"
 
 enum EvalResultType {
     EVAL_VAL,
@@ -26,114 +26,60 @@ Value identity(Call curr) {
     return curr.args.elements[0];
 }
 
-Value set_value(Call curr, const Block args) {
-    // assert(args.elements[0].type == TYPE_WORD);
-    //
-    // const Binding b = (Binding){
-    //     .word = args.elements[0].as_word,
-    //     .value = args.elements[1]
-    // };
-    // bindings_push(&curr.frame.bindings, &b);
-
-    return (Value){.type = TYPE_NIL};
+Value frozen(const Value form) {
+    return form;
 }
 
-Value frozen(const ASTNode form) {
-    Value result;
+EvalResult eval_ast(Block, ScopeBindings root_bindings, bool free_root_bindings);
 
-    switch (form.type) {
-        case AST_WORD:
-            result.type = TYPE_WORD;
-            result.as_word = form.as_word.content;
-            break;
-        case AST_DOUBLE:
-            result.type = TYPE_DOUBLE;
-            result.as_double = form.as_double;
-            break;
-        case AST_INTEGER:
-            result.type = TYPE_INT;
-            result.as_integer = form.as_integer;
-            break;
-        case AST_BLOCK:
-            result.type = TYPE_BLOCK;
-            /* TODO leak ; make a global map of frozen blocks with main()-level lifetime?
-                pre-allocate all literal blocks during parsing? */
-            result.as_block = alloc_block(form.as_block.seq.len);
-            for (size_t i = 0; i < form.as_block.seq.len; i++) {
-                result.as_block.elements[i] = frozen(form.as_block.seq.ptr[i]);
-            }
-            break;
-        default:
-            exhaustive_switch();
-    }
-
-    return result;
-}
-
-EvalResult eval_ast(ASTBlock, ScopeBindings root_bindings, bool free_root_bindings);
-
-EvalResult eval_form(const ASTNode form, const FrameStack fstack, Frame *frame) {
+EvalResult eval_form(const Value form, const FrameStack fstack, Frame *frame) {
     Value result;
     LookupResult lr;
 
     switch (form.type) {
-        case AST_WORD:
-            if (form.as_word.is_quoted) {
-                result.type = TYPE_WORD;
-                result.as_word = form.as_word.content;
+        case TYPE_LITWORD:
+            result = form;
+            break;
+        case TYPE_WORD:
+            lr = lookup(fstack, frame, form.as_word);
+            if (lr.is_bound) {
+                result = lr.value;
             } else {
-                lr = lookup(fstack, frame, form.as_word.content);
-                if (lr.is_bound) {
-                    result = lr.value;
-                } else {
-                    StringVChain chain = strvc_newempty();
-                    strvc_push(&chain, strv_fromcstr("Error: evaluated word `"));
-                    strvc_push(&chain, form.as_word.content);
-                    strvc_push(&chain, strv_fromcstr("` is unbound."));
-                    return (EvalResult){
-                        .type = EVAL_ERR,
-                        .as_err = (Error){
-                            .location = {0},
-                            .message = chain
-                        }
-                    };
-                }
+                StringVChain chain = strvc_newempty();
+                strvc_push(&chain, strv_fromcstr("Error: evaluated word `"));
+                strvc_push(&chain, form.as_word);
+                strvc_push(&chain, strv_fromcstr("` is unbound."));
+                return (EvalResult) {.type = EVAL_ERR, .as_err = (Error) {.location = {0}, .message = chain}};
             }
             break;
-        case AST_DOUBLE:
+        case TYPE_DOUBLE:
             result.type = TYPE_DOUBLE;
             result.as_double = form.as_double;
             break;
-        case AST_INTEGER:
+        case TYPE_INT:
             result.type = TYPE_INT;
             result.as_integer = form.as_integer;
             break;
-        case AST_BLOCK:
+        case TYPE_BLOCK:
             result = frozen(form);
             break;
         default:
             exhaustive_switch();
     }
 
-    return (EvalResult){.type = EVAL_VAL, .as_val = result};
+    return (EvalResult) {.type = EVAL_VAL, .as_val = result};
 }
 
-EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool free_root_bindings) {
+EvalResult eval_ast(const Block root, ScopeBindings root_bindings, const bool free_root_bindings) {
     EvalResult result;
-    Value value = (Value){.type = TYPE_NIL};
+    Value value = (Value) {.type = TYPE_NIL};
     FrameStack fstack = alloc_fstack();
-    Operative root_op = (Operative){
-        .type = OP_FUNCTION,
-        .expected_args = 0,
-        .as_function = root
-    };
-    Frame root_frame = (Frame){
-        .bindings = root_bindings,
-        .cstack = alloc_cstack(),
-        .op = root_op,
-        .parent_idx = (OptSize){false},
-        .walk_idx = 0
-    };
+    Operative root_op = (Operative) {.type = OP_FUNCTION, .expected_args = 0, .as_function = root};
+    Frame root_frame = (Frame) {.bindings = root_bindings,
+                                .cstack = alloc_cstack(),
+                                .op = root_op,
+                                .parent_idx = (OptSize) {false},
+                                .walk_idx = 0};
     Frame new_frame;
     Operative op;
     fstack_push(&fstack, &root_frame);
@@ -143,15 +89,14 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool
         CallStack *cstack = &f->cstack;
         Call *c = cstack_peek(cstack);
 
-        ASTBlock tree = f->op.as_function; // builtins executed instantly below
+        Block tree = f->op.as_function; // builtins executed instantly below
         size_t i = f->walk_idx++;
-        if (i == tree.seq.len) {
+        if (i == tree.len) {
             if (cstack->len != 0) {
-                fprintf(
-                    stderr,
-                    "Error: the following block's last operative is incomplete. Expected %zu arguments, got %zu\n",
-                    c->args.len, c->args_taken);
-                fprintast(stderr, tree, 0);
+                fprintf(stderr,
+                        "Error: the following block's last operative is incomplete. Expected %zu arguments, got %zu\n",
+                        c->args.len, c->args_taken);
+                fprintval(stderr, (Value) {TYPE_BLOCK, .as_block = tree});
                 panicf("");
             }
             if (free_root_bindings || fstack.len > 1) free(f->bindings.ptr);
@@ -165,7 +110,7 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool
             }
             continue;
         }
-        result = eval_form(tree.seq.ptr[i], fstack, f);
+        result = eval_form(tree.elements[i], fstack, f);
         if (result.type == EVAL_ERR) {
             free_runtime(fstack, free_root_bindings);
             return result;
@@ -174,7 +119,7 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool
         switch (value.type) {
             case TYPE_OP:
                 op = value.as_op;
-                Call newc = (Call){
+                Call newc = (Call) {
                     op,
                     alloc_block(op.expected_args),
                     0,
@@ -201,14 +146,13 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool
                     if (c) c->args.elements[c->args_taken++] = value;
                     break;
                 case OP_FUNCTION:
-                    new_frame = (Frame){
-                        .bindings = alloc_bindings(),
-                        .op = op,
-                        .parent_idx = (OptSize){true, 0},
-                        /* TODO the parent would be set at the point of its definition, i.e. in the builtin
-                             so a function defined in a frame would have its parent set to the active frame */
-                        .walk_idx = 0
-                    };
+                    new_frame =
+                        (Frame) {.bindings = alloc_bindings(),
+                                 .op = op,
+                                 .parent_idx = (OptSize) {true, 0},
+                                 /* TODO the parent would be set at the point of its definition, i.e. in the builtin
+                                      so a function defined in a frame would have its parent set to the active frame */
+                                 .walk_idx = 0};
                     fstack_push(&fstack, &new_frame);
                     free(c->args.elements);
                     cstack_pop(cstack);
@@ -228,9 +172,8 @@ EvalResult eval_ast(const ASTBlock root, ScopeBindings root_bindings, const bool
 }
 
 void def(ScopeBindings *bindings, const char *name, const size_t args, const BuiltInOp op) {
-    bind(bindings, strv_fromcstr(name), (Value){
-             .type = TYPE_OP, .as_op = (Operative){.type = OP_BUILTIN, .expected_args = args, .as_builtin = op}
-         });
+    bind(bindings, strv_fromcstr(name),
+         (Value) {.type = TYPE_OP, .as_op = (Operative) {.type = OP_BUILTIN, .expected_args = args, .as_builtin = op}});
 }
 
 ScopeBindings default_builtins(void) {
@@ -252,13 +195,13 @@ int execute_file(const char *path) {
         return EXIT_FAILURE;
     }
     const Tokens tokens = tokensres.res;
-    const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
+    const BlockResult rootres = parse_tokens((TokensSlice) {tokens.ptr, tokens.len}, src);
     if (!rootres.isok) {
         free_tokens(tokens);
         report_err(rootres.err);
         return EXIT_FAILURE;
     }
-    const ASTBlock root = rootres.res;
+    const Block root = rootres.res;
     const ScopeBindings builtins = default_builtins();
     const EvalResult r = eval_ast(root, builtins, true);
     if (r.type == EVAL_ERR) {
@@ -303,14 +246,14 @@ void repl(void) {
             continue;
         }
         const Tokens tokens = tokensres.res;
-        const ASTBlockResult rootres = parse_tokens((TokensSlice){tokens.ptr, tokens.len}, src);
+        const BlockResult rootres = parse_tokens((TokensSlice) {tokens.ptr, tokens.len}, src);
         if (!rootres.isok) {
             report_err(rootres.err);
             str_popall(repl_input);
             free_tokens(tokens);
             continue;
         }
-        const ASTBlock root = rootres.res;
+        const Block root = rootres.res;
 
         const EvalResult r = eval_ast(root, root_bindings, false);
         if (r.type == EVAL_ERR) {
